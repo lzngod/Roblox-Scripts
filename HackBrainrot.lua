@@ -2,7 +2,7 @@
 local username = "LZNGOD" -- Seu nome de usuário do Roblox
 local userId = 927638286 -- Seu ID de usuário do Roblox
 local timerFile = "follow_timer.txt" -- Arquivo para armazenar o tempo inicial
-local waitTime = 300 -- 5 minutos (300 segundos)
+local waitTime = 30 -- 5 minutos (300 segundos)
 local toggleIcon = "rbxassetid://10734949875" -- Ícone público do Roblox (estrela dourada)
 
 -- Função para exibir notificações
