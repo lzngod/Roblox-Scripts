@@ -2,8 +2,8 @@
 local username = "LZNGOD" -- Seu nome de usuário do Roblox
 local userId = 927638286 -- Seu ID de usuário do Roblox
 local timerFile = "follow_timer.txt" -- Arquivo para armazenar o tempo inicial
-local waitTime = 30 -- 5 minutos (300 segundos)
-local toggleIcon = "rbxassetid://10734949875" -- Ícone público do Roblox (estrela dourada)
+local waitTime = 300 -- 5 minutos (300 segundos)
+local toggleIcon = "rbxassetid://15078669572" -- Ícone original
 
 -- Função para exibir notificações
 local function notify(title, text, duration)
@@ -28,7 +28,7 @@ if isfile and isfile(timerFile) then
     startTime = tonumber(readfile(timerFile)) or 0
 end
 
--- Remover GUI antiga, se existir
+-- Remover GUI antiga
 pcall(function()
     local oldGui = game.Players.LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("FollowGui")
     if oldGui then oldGui:Destroy() end
@@ -114,9 +114,9 @@ Instance.new("UICorner", copyButton).CornerRadius = UDim.new(0, 14)
 copyButton.MouseButton1Click:Connect(function()
     if setclipboard then
         setclipboard(username)
-        notify("Sucesso!", "Nome de usuário copiado!", 3)
+        print("✅ Nome de usuário copiado!")
     else
-        notify("Erro", "Clipboard não disponível.", 3)
+        warn("❌ Clipboard não disponível.")
     end
 end)
 
@@ -160,44 +160,44 @@ closeButton.MouseButton1Click:Connect(function()
     if not closeButton.Active then return end
     gui:Destroy()
 
-    -- Iniciar script de trapaças
+    -- Script de trapaças (nabaruBrainrot traduzido)
     local player = game.Players.LocalPlayer
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "HackBrainrot"
+    screenGui.Name = "StealBrainrot"
     screenGui.ResetOnSpawn = false
     screenGui.Parent = player:WaitForChild("PlayerGui")
 
-    -- Frame principal do hack
-    local hackFrame = Instance.new("Frame")
-    hackFrame.Size = UDim2.new(0, 180, 0, 170)
-    hackFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-    hackFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-    hackFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    hackFrame.Visible = false
-    hackFrame.Active = true
-    hackFrame.Draggable = true
-    hackFrame.Parent = screenGui
-    Instance.new("UICorner", hackFrame).CornerRadius = UDim.new(0, 12)
+    -- Frame principal
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 180, 0, 170)
+    frame.AnchorPoint = Vector2.new(0.5, 0.5)
+    frame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    frame.Visible = false
+    frame.Active = true
+    frame.Draggable = true
+    frame.Parent = screenGui
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
 
     -- Borda do frame
     local uiStroke = Instance.new("UIStroke")
     uiStroke.Color = Color3.fromRGB(47, 229, 255)
     uiStroke.Thickness = 1.7
-    uiStroke.Parent = hackFrame
+    uiStroke.Parent = frame
 
-    -- Layout para botões
+    -- Layout para organização
     local uiListLayout = Instance.new("UIListLayout")
     uiListLayout.Padding = UDim.new(0, 8)
     uiListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
     uiListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    uiListLayout.Parent = hackFrame
+    uiListLayout.Parent = frame
 
     -- Espaçamento superior
     local uiPadding = Instance.new("UIPadding")
     uiPadding.PaddingTop = UDim.new(0, 12)
-    uiPadding.Parent = hackFrame
+    uiPadding.Parent = frame
 
-    -- Função para criar botões de toggle
+    -- Função para criar botões com toggle
     local function createToggleButton(config)
         local default = config.Default or false
         local button = Instance.new("TextButton")
@@ -209,7 +209,7 @@ closeButton.MouseButton1Click:Connect(function()
         button.Text = config.Name
         button.TextXAlignment = Enum.TextXAlignment.Left
         button.BorderSizePixel = 0
-        button.Parent = hackFrame
+        button.Parent = frame
         Instance.new("UICorner", button).CornerRadius = UDim.new(0, 8)
 
         -- Indicador de toggle
@@ -236,46 +236,10 @@ closeButton.MouseButton1Click:Connect(function()
         Default = false,
         Callback = function(enabled)
             if enabled then
-                -- Procurar evento remoto
-                local stealEvent
-                for _, obj in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
-                    if obj:IsA("RemoteEvent") and (obj.Name:lower():find("steal") or obj.Name:lower():find("rob")) then
-                        stealEvent = obj
-                        break
-                    end
-                end
-                if stealEvent then
-                    notify("Sucesso!", "Evento '" .. stealEvent.Name .. "' encontrado! Roubo Automático ativado!", 5)
-                    spawn(function()
-                        while enabled do
-                            for _, targetPlayer in ipairs(game.Players:GetPlayers()) do
-                                if targetPlayer ~= player then
-                                    pcall(function()
-                                        stealEvent:FireServer(targetPlayer.Name)
-                                    end)
-                                end
-                            end
-                            wait(1)
-                        end
-                    end)
-                else
-                    -- Fallback para ProximityPrompts
-                    notify("Aviso", "Evento remoto não encontrado. Usando ProximityPrompts para Roubo Automático.", 5)
-                    spawn(function()
-                        while enabled do
-                            for _, prompt in ipairs(workspace:GetDescendants()) do
-                                if prompt:IsA("ProximityPrompt") and prompt.Name == "StealPrompt" then
-                                    pcall(function()
-                                        fireproximityprompt(prompt)
-                                    end)
-                                end
-                            end
-                            wait(0.5)
-                        end
-                    end)
-                end
-            else
-                notify("Desativado", "Roubo Automático desativado!", 3)
+                print("✅ Iniciando Roubo Automático")
+                pcall(function()
+                    loadstring(game:HttpGet("https://raw.githubusercontent.com/Akbar123s/Script-Roblox-/refs/heads/main/AutoSteal"))()
+                end)
             end
         end
     })
@@ -287,7 +251,6 @@ closeButton.MouseButton1Click:Connect(function()
         Callback = function(enabled)
             autoClick = enabled
             modifyClickDetectors(autoClick)
-            notify(enabled and "Sucesso!" or "Desativado", enabled and "Clique Automático ativado!" or "Clique Automático desativado!", 3)
         end
     })
 
@@ -309,17 +272,17 @@ closeButton.MouseButton1Click:Connect(function()
     end)
 
     -- Toggle para Auto Jump
+    local autoJump = false
     createToggleButton({
         Name = "Pulo Automático",
         Default = false,
         Callback = function(enabled)
-            notify("Pulo Automático", enabled and "Ativado!" or "Desativado!", 3)
+            print("Pulo Automático:", enabled)
             if enabled then
                 local function setupAutoJump()
                     local player = game:GetService("Players").LocalPlayer
                     if player:FindFirstChild("PlayerGui") then
-                        local clickerGui = player:FindFirstChild("PlayerGui"):FindFirstChild("Clicker")
-                        if clickerGui then clickerGui:Destroy() end
+                        player:FindFirstChild("PlayerGui"):FindFirstChild("Clicker"):Destroy()
                     end
                     local gui = Instance.new("ScreenGui")
                     gui.Name = "ClickerSteal"
@@ -367,7 +330,7 @@ closeButton.MouseButton1Click:Connect(function()
                     textBox.TextColor3 = Color3.fromRGB(0, 0, 0)
                     textBox.Font = Enum.Font.Gotham
                     textBox.PlaceholderText = "Insira a altura"
-                    textBox.Text = "6"
+                    textBox.Text = "7"
                     textBox.ClearTextOnFocus = false
                     textBox.TextSize = 12
                     textBox.Parent = frame
@@ -396,62 +359,63 @@ closeButton.MouseButton1Click:Connect(function()
                             part:Destroy()
                             part = nil
                             button.Text = "Pular!"
-                            notify("Pulo", "Pulo parado!", 3)
                         else
                             local character = player.Character
                             if not character or not character:FindFirstChild("Head") or not character:FindFirstChild("HumanoidRootPart") then
-                                notify("Erro", "Personagem não encontrado!", 3)
                                 return
                             end
                             local height = tonumber(textBox.Text) or 6
                             local head = character.Head
                             part = Instance.new("Part")
-                            part.Name = "ClickerJump"
+                            part.Name = "ClickerPart"
                             part.Size = Vector3.new(1000, 1, 1000)
-                            part.Position = head.Position + Vector3.new(0, height, 0)
                             part.Anchored = true
                             part.Transparency = 1
                             part.CanCollide = true
+                            part.Position = head.Position + Vector3.new(0, height, 0)
                             part.Material = Enum.Material.Neon
                             part.BrickColor = BrickColor.new("Really red")
                             part.Parent = workspace
                             task.wait(0.1)
                             character.HumanoidRootPart.CFrame = CFrame.new(part.Position + Vector3.new(0, 3, 0))
                             button.Text = "Parar Pulo"
-                            notify("Pulo", "Pulo iniciado!", 3)
                         end
                     end)
                 end
                 setupAutoJump()
             end
+            autoJump = enabled
         end
     })
 
-    -- Botão de toggle para mostrar/esconder GUI de hacks
+    -- Botão de toggle da GUI
     local toggleButton = Instance.new("ImageButton")
-    toggleButton.Name = "ToggleHack"
+    toggleButton.Name = "ToggleSteal"
     toggleButton.Size = UDim2.new(0, 50, 0, 50)
-    toggleButton.Position = UDim2.new(0, 20, 0, 20) -- Canto superior esquerdo
+    toggleButton.Position = UDim2.new(0, 50, 0.2, 0)
     toggleButton.Image = toggleIcon
     toggleButton.BackgroundTransparency = 1
     toggleButton.Parent = screenGui
     toggleButton.Active = true
     toggleButton.Draggable = true
     Instance.new("UICorner", toggleButton).CornerRadius = UDim.new(0, 12)
-    local toggleStroke = Instance.new("UIStroke")
-    toggleStroke.Color = Color3.fromRGB(255, 255, 255)
-    toggleStroke.Thickness = 1
-    toggleStroke.Parent = toggleButton
 
     local guiVisible = false
     toggleButton.MouseButton1Click:Connect(function()
         guiVisible = not guiVisible
-        hackFrame.Visible = guiVisible
-        notify("GUI", guiVisible and "Menu de hacks aberto!" or "Menu de hacks fechado!", 3)
+        frame.Visible = guiVisible
     end)
 
+    -- Notificação inicial
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "Sucesso!",
+        Text = "Script carregado com sucesso!",
+        Icon = toggleIcon,
+        Duration = 5
+    })
+
     -- Modificar BillboardGuis
-    local function modifyDisplay(descendant)
+    local function modifyBillboardGui(descendant)
         if descendant:IsA("BillboardGui") and descendant.Name == "Clicker" then
             local parent = descendant.Parent
             while parent do
@@ -472,14 +436,14 @@ closeButton.MouseButton1Click:Connect(function()
     end
 
     for _, descendant in ipairs(workspace:GetDescendants()) do
-        modifyDisplay(descendant)
+        modifyBillboardGui(descendant)
     end
     workspace.DescendantAdded:Connect(function(descendant)
-        modifyDisplay(descendant)
+        modifyBillboardGui(descendant)
     end)
 
     -- Modificar ProximityPrompts
-    local function modifyPrompt(descendant)
+    local function modifyProximityPrompt(descendant)
         if descendant:IsA("ProximityPrompt") and descendant.Name == "StealPrompt" then
             local parent = descendant.Parent
             while parent do
@@ -497,27 +461,20 @@ closeButton.MouseButton1Click:Connect(function()
     end
 
     for _, descendant in ipairs(workspace:GetDescendants()) do
-        modifyPrompt(descendant)
+        modifyProximityPrompt(descendant)
     end
     workspace.DescendantAdded:Connect(function(descendant)
-        modifyPrompt(descendant)
+        modifyProximityPrompt(descendant)
     end)
-
-    -- Notificação de carregamento
-    notify("Carregado!", "Script de LZNGOD carregado com sucesso!", 5)
 end)
 
 -- Notificação inicial
-local filename = "executado.txt"
+local filename = "already_executed.txt"
 if not isfile(filename) then
-    notify("Mensagem", "Siga LZNGOD antes do tempo acabar!", 300)
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "Mensagem",
+        Text = "Siga LZNGOD antes do tempo acabar!",
+        Duration = 300
+    })
     writefile(filename, "true")
-end
-
--- Tratamento de erros geral
-local success, errorMsg = pcall(function()
-    -- Todo o script está dentro deste pcall
-end)
-if not success then
-    notify("Erro", "Falha ao executar o script: " .. tostring(errorMsg), 10)
 end
