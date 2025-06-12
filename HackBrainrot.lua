@@ -1,8 +1,21 @@
--- Configurações iniciais
+-- Script de trapaças para Steal a Brainrot por LZNGOD
 local username = "LZNGOD" -- Seu nome de usuário do Roblox
 local userId = 927638286 -- Seu ID de usuário do Roblox
 local timerFile = "follow_timer.txt" -- Arquivo para armazenar o tempo inicial
 local waitTime = 300 -- 5 minutos (300 segundos)
+local toggleIcon = "rbxassetid://10734949875" -- Ícone público do Roblox (estrela dourada)
+
+-- Função para exibir notificações
+local function notify(title, text, duration)
+    pcall(function()
+        game.StarterGui:SetCore("SendNotification", {
+            Title = title,
+            Text = text,
+            Icon = toggleIcon, -- Ícone visível nas notificações
+            Duration = duration or 5
+        })
+    end)
+end
 
 -- Salvar tempo inicial se o arquivo não existir
 if writefile and not isfile(timerFile) then
@@ -33,7 +46,7 @@ instruction.Size = UDim2.new(0, 340, 0, 30)
 instruction.AnchorPoint = Vector2.new(0.5, 1)
 instruction.Position = UDim2.new(0.5, 0, 0.5, -95)
 instruction.BackgroundTransparency = 1
-instruction.Text = "Siga meu Roblox para abrir o script!"
+instruction.Text = "Siga LZNGOD no Roblox para abrir o script!"
 instruction.Font = Enum.Font.GothamBold
 instruction.TextSize = 16
 instruction.TextColor3 = Color3.fromRGB(255, 200, 0)
@@ -65,7 +78,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -90, 0, 60)
 title.Position = UDim2.new(0, 85, 0, 15)
 title.BackgroundTransparency = 1
-title.Text = "Siga minha conta no Roblox!"
+title.Text = "Siga LZNGOD no Roblox!"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 20
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -101,9 +114,9 @@ Instance.new("UICorner", copyButton).CornerRadius = UDim.new(0, 14)
 copyButton.MouseButton1Click:Connect(function()
     if setclipboard then
         setclipboard(username)
-        print("✅ Nome de usuário copiado!")
+        notify("Sucesso!", "Nome de usuário copiado!", 3)
     else
-        warn("❌ Clipboard não disponível.")
+        notify("Erro", "Clipboard não disponível.", 3)
     end
 end)
 
@@ -217,25 +230,32 @@ closeButton.MouseButton1Click:Connect(function()
         end)
     end
 
-    -- Toggle para Auto Steal (exemplo simples)
+    -- Toggle para Auto Steal
     createToggleButton({
         Name = "Roubo Automático",
         Default = false,
         Callback = function(enabled)
             if enabled then
-                print("✅ Roubo Automático ativado!")
-                while enabled do
-                    -- Simula roubo automático (exemplo básico)
-                    for _, player in ipairs(game.Players:GetPlayers()) do
-                        if player ~= game.Players.LocalPlayer then
-                            local args = {player.Name}
-                            game:GetService("ReplicatedStorage"):WaitForChild("Steal"):FireServer(unpack(args))
-                        end
-                    end
-                    wait(1)
+                local stealEvent = game:GetService("ReplicatedStorage"):FindFirstChild("Steal")
+                if not stealEvent then
+                    notify("Erro", "Evento 'Steal' não encontrado. Roubo Automático não funcionará.", 5)
+                    return
                 end
+                notify("Sucesso!", "Roubo Automático ativado!", 3)
+                spawn(function()
+                    while enabled do
+                        for _, targetPlayer in ipairs(game.Players:GetPlayers()) do
+                            if targetPlayer ~= player then
+                                pcall(function()
+                                    stealEvent:FireServer(targetPlayer.Name)
+                                end)
+                            end
+                        end
+                        wait(1)
+                    end
+                end)
             else
-                print("❌ Roubo Automático desativado!")
+                notify("Desativado", "Roubo Automático desativado!", 3)
             end
         end
     })
@@ -247,6 +267,7 @@ closeButton.MouseButton1Click:Connect(function()
         Callback = function(enabled)
             autoClick = enabled
             modifyClickDetectors(autoClick)
+            notify(enabled and "Sucesso!" or "Desativado", enabled and "Clique Automático ativado!" or "Clique Automático desativado!", 3)
         end
     })
 
@@ -272,12 +293,13 @@ closeButton.MouseButton1Click:Connect(function()
         Name = "Pulo Automático",
         Default = false,
         Callback = function(enabled)
-            print("Pulo Automático:", enabled)
+            notify("Pulo Automático", enabled and "Ativado!" or "Desativado!", 3)
             if enabled then
                 local function setupAutoJump()
                     local player = game:GetService("Players").LocalPlayer
                     if player:FindFirstChild("PlayerGui") then
-                        player:FindFirstChild("PlayerGui"):FindFirstChild("Clicker"):Destroy()
+                        local clickerGui = player:FindFirstChild("PlayerGui"):FindFirstChild("Clicker")
+                        if clickerGui then clickerGui:Destroy() end
                     end
                     local gui = Instance.new("ScreenGui")
                     gui.Name = "ClickerSteal"
@@ -312,7 +334,11 @@ closeButton.MouseButton1Click:Connect(function()
                     uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
                     uiListLayout.Parent = frame
 
-                    local uiPadding = UDim.new(0, 8)
+                    local uiPadding = Instance.new("UIPadding")
+                    uiPadding.PaddingTop = UDim.new(0, 8)
+                    uiPadding.PaddingBottom = UDim.new(0, 8)
+                    uiPadding.PaddingLeft = UDim.new(0, 8)
+                    uiPadding.PaddingRight = UDim.new(0, 8)
                     uiPadding.Parent = frame
 
                     local textBox = Instance.new("TextBox")
@@ -332,7 +358,7 @@ closeButton.MouseButton1Click:Connect(function()
 
                     local button = Instance.new("TextButton")
                     button.Size = UDim2.new(1, 0, 0, 26)
-                    button.BackgroundColor3 = Color3.fromRGB(0, 170, 235)
+                    button.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
                     button.TextColor3 = Color3.new(1, 1, 1)
                     button.Text = "Pular!"
                     button.Font = Enum.Font.GothamBold
@@ -350,9 +376,11 @@ closeButton.MouseButton1Click:Connect(function()
                             part:Destroy()
                             part = nil
                             button.Text = "Pular!"
+                            notify("Pulo", "Pulo parado!", 3)
                         else
                             local character = player.Character
-                            if not character or not character:FindFirstChild("Head") then
+                            if not character or not character:FindFirstChild("Head") or not character:FindFirstChild("HumanoidRootPart") then
+                                notify("Erro", "Personagem não encontrado!", 3)
                                 return
                             end
                             local height = tonumber(textBox.Text) or 6
@@ -370,6 +398,7 @@ closeButton.MouseButton1Click:Connect(function()
                             task.wait(0.1)
                             character.HumanoidRootPart.CFrame = CFrame.new(part.Position + Vector3.new(0, 3, 0))
                             button.Text = "Parar Pulo"
+                            notify("Pulo", "Pulo iniciado!", 3)
                         end
                     end)
                 end
@@ -378,22 +407,28 @@ closeButton.MouseButton1Click:Connect(function()
         end
     })
 
-    -- Bot de toggle para mostrar/esconder GUI de hacks
+    -- Botão de toggle para mostrar/esconder GUI de hacks
     local toggleButton = Instance.new("ImageButton")
     toggleButton.Name = "ToggleHack"
     toggleButton.Size = UDim2.new(0, 50, 0, 50)
-    toggleButton.Position = UDim2.new(0, 50, 0.2, 0)
-    toggleButton.Image = "rbxassetid://15078669572"
+    toggleButton.Position = UDim2.new(0, 20, 0, 20) -- Ajustado para canto superior esquerdo
+    toggleButton.Image = toggleIcon
     toggleButton.BackgroundTransparency = 1
     toggleButton.Parent = screenGui
     toggleButton.Active = true
     toggleButton.Draggable = true
     Instance.new("UICorner", toggleButton).CornerRadius = UDim.new(0, 12)
+    -- Borda para destacar o botão
+    local toggleStroke = Instance.new("UIStroke")
+    toggleStroke.Color = Color3.fromRGB(255, 255, 255)
+    toggleStroke.Thickness = 1
+    toggleStroke.Parent = toggleButton
 
     local guiVisible = false
     toggleButton.MouseButton1Click:Connect(function()
         guiVisible = not guiVisible
         hackFrame.Visible = guiVisible
+        notify("GUI", guiVisible and "Menu de hacks aberto!" or "Menu de hacks fechado!", 3)
     end)
 
     -- Modificar BillboardGuis
@@ -410,6 +445,7 @@ closeButton.MouseButton1Click:Connect(function()
                             print("✅ Placa modificada:", descendant:GetFullName())
                         end
                     end
+                    break
                 end
                 parent = parent.Parent
             end
@@ -417,8 +453,8 @@ closeButton.MouseButton1Click:Connect(function()
     end
 
     for _, descendant in ipairs(workspace:GetDescendants()) do
-            modifyDisplay(descendant)
-        end
+        modifyDisplay(descendant)
+    end
     workspace.DescendantAdded:Connect(function(descendant)
         modifyDisplay(descendant)
     end)
@@ -428,7 +464,7 @@ closeButton.MouseButton1Click:Connect(function()
         if descendant:IsA("ProximityPrompt") and descendant.Name == "StealPrompt" then
             local parent = descendant.Parent
             while parent do
-                if parent:IsA("Model") and parent.Name == "Clicker" and descendant:IsDescendantOf(workspace) then
+                if parent:IsA("Model") and parent.Name == "Clicker" and parent:IsDescendantOf(workspace) then
                     descendant.Enabled = false
                     descendant.RequiresLineOfSight = false
                     descendant.HoldDuration = 0
@@ -449,25 +485,20 @@ closeButton.MouseButton1Click:Connect(function()
     end)
 
     -- Notificação de carregamento
-    local filename = "script_executado.txt"
-    if not isfile(filename) then
-        game.StarterGui:SetCore("SendNotification", {
-            Title = "Carregado!",
-            Text = "Script carregado com sucesso!",
-            Icon = "rbxassetid://15078669572",
-            Duration = 5
-        })
-        writefile(filename, "true")
-    end
+    notify("Carregado!", "Script de LZNGOD carregado com sucesso!", 5)
 end)
 
 -- Notificação inicial
 local filename = "executado.txt"
 if not isfile(filename) then
-    game.StarterGui:SetCore("SendNotification", {
-        Title = "Mensagem",
-        Text = "Siga LZNGOD antes do tempo acabar!",
-        Duration = 300
-    })
+    notify("Mensagem", "Siga LZNGOD antes do tempo acabar!", 300)
     writefile(filename, "true")
+end
+
+-- Tratamento de erros geral
+local success, errorMsg = pcall(function()
+    -- Todo o script está dentro deste pcall
+end)
+if not success then
+    notify("Erro", "Falha ao executar o script: " .. tostring(errorMsg), 10)
 end
