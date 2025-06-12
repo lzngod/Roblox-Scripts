@@ -11,7 +11,7 @@ local function notify(title, text, duration)
         game.StarterGui:SetCore("SendNotification", {
             Title = title,
             Text = text,
-            Icon = toggleIcon, -- Ícone visível nas notificações
+            Icon = toggleIcon,
             Duration = duration or 5
         })
     end)
@@ -236,24 +236,44 @@ closeButton.MouseButton1Click:Connect(function()
         Default = false,
         Callback = function(enabled)
             if enabled then
-                local stealEvent = game:GetService("ReplicatedStorage"):FindFirstChild("Steal")
-                if not stealEvent then
-                    notify("Erro", "Evento 'Steal' não encontrado. Roubo Automático não funcionará.", 5)
-                    return
-                end
-                notify("Sucesso!", "Roubo Automático ativado!", 3)
-                spawn(function()
-                    while enabled do
-                        for _, targetPlayer in ipairs(game.Players:GetPlayers()) do
-                            if targetPlayer ~= player then
-                                pcall(function()
-                                    stealEvent:FireServer(targetPlayer.Name)
-                                end)
-                            end
-                        end
-                        wait(1)
+                -- Procurar evento remoto
+                local stealEvent
+                for _, obj in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+                    if obj:IsA("RemoteEvent") and (obj.Name:lower():find("steal") or obj.Name:lower():find("rob")) then
+                        stealEvent = obj
+                        break
                     end
-                end)
+                end
+                if stealEvent then
+                    notify("Sucesso!", "Evento '" .. stealEvent.Name .. "' encontrado! Roubo Automático ativado!", 5)
+                    spawn(function()
+                        while enabled do
+                            for _, targetPlayer in ipairs(game.Players:GetPlayers()) do
+                                if targetPlayer ~= player then
+                                    pcall(function()
+                                        stealEvent:FireServer(targetPlayer.Name)
+                                    end)
+                                end
+                            end
+                            wait(1)
+                        end
+                    end)
+                else
+                    -- Fallback para ProximityPrompts
+                    notify("Aviso", "Evento remoto não encontrado. Usando ProximityPrompts para Roubo Automático.", 5)
+                    spawn(function()
+                        while enabled do
+                            for _, prompt in ipairs(workspace:GetDescendants()) do
+                                if prompt:IsA("ProximityPrompt") and prompt.Name == "StealPrompt" then
+                                    pcall(function()
+                                        fireproximityprompt(prompt)
+                                    end)
+                                end
+                            end
+                            wait(0.5)
+                        end
+                    end)
+                end
             else
                 notify("Desativado", "Roubo Automático desativado!", 3)
             end
@@ -411,14 +431,13 @@ closeButton.MouseButton1Click:Connect(function()
     local toggleButton = Instance.new("ImageButton")
     toggleButton.Name = "ToggleHack"
     toggleButton.Size = UDim2.new(0, 50, 0, 50)
-    toggleButton.Position = UDim2.new(0, 20, 0, 20) -- Ajustado para canto superior esquerdo
+    toggleButton.Position = UDim2.new(0, 20, 0, 20) -- Canto superior esquerdo
     toggleButton.Image = toggleIcon
     toggleButton.BackgroundTransparency = 1
     toggleButton.Parent = screenGui
     toggleButton.Active = true
     toggleButton.Draggable = true
     Instance.new("UICorner", toggleButton).CornerRadius = UDim.new(0, 12)
-    -- Borda para destacar o botão
     local toggleStroke = Instance.new("UIStroke")
     toggleStroke.Color = Color3.fromRGB(255, 255, 255)
     toggleStroke.Thickness = 1
