@@ -13,7 +13,7 @@ end
 
 -- Verificação de whitelist
 local WHITELIST_FILE = "whitelist_br.txt"
-local WAIT_TIME = 300 -- 5 minutos
+local WAIT_TIME = 30 -- 5 minutos
 local function checkWhitelist()
     if writefile and not isfile(WHITELIST_FILE) then
         writefile(WHITELIST_FILE, tostring(os.time()))
