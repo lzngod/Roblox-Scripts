@@ -1,280 +1,331 @@
--- Script para Roblox: Steal a Brainrot
--- Criado para o público brasileiro, com interface em português
--- Inspirado nos scripts fornecidos e repositório Akbar123s
-
--- Função de notificação
-local function notify(title, text, duration)
-    game.StarterGui:SetCore("SendNotification", {
-        Title = title,
-        Text = text,
-        Duration = duration or 5
-    })
+local v9 = "6027385792"
+local v10 = "whitelist.txt"
+local v11 = 30
+if (writefile and not isfile("whitelist.txt")) then
+    writefile("whitelist.txt", tostring(os.time()))
 end
-
--- Verificação de whitelist
-local WHITELIST_FILE = "whitelist_br.txt"
-local WAIT_TIME = 30 -- 5 minutos
-local function checkWhitelist()
-    if writefile and not isfile(WHITELIST_FILE) then
-        writefile(WHITELIST_FILE, tostring(os.time()))
-    end
-    local lastTime = isfile(WHITELIST_FILE) and tonumber(readfile(WHITELIST_FILE)) or 0
-    return os.time() - lastTime >= WAIT_TIME
+local v12 = 0
+if (isfile and isfile("whitelist.txt")) then
+    v12 = tonumber(readfile("whitelist.txt")) or 0
 end
-
--- Criação da GUI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "BrainRotGUI"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-
-local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 160, 0, 100)
-Frame.Position = UDim2.new(0, 50, 0, 50)
-Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Frame.Active = true
-Frame.Draggable = true
-Frame.Parent = ScreenGui
-Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
-
-local UIStroke = Instance.new("UIStroke", Frame)
-UIStroke.Thickness = 1
-UIStroke.Color = Color3.fromRGB(255, 255, 255)
-UIStroke.Transparency = 0.2
-
-local UIPadding = Instance.new("UIPadding", Frame)
-UIPadding.PaddingTop = UDim.new(0, 6)
-UIPadding.PaddingLeft = UDim.new(0, 6)
-UIPadding.PaddingRight = UDim.new(0, 6)
-
-local UIGridLayout = Instance.new("UIGridLayout", Frame)
-UIGridLayout.Padding = UDim.new(0, 5)
-UIGridLayout.FillDirection = Enum.FillDirection.Vertical
-UIGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIGridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
-local StatusLabel = Instance.new("TextLabel")
-StatusLabel.Size = UDim2.new(1, 0, 0, 18)
-StatusLabel.BackgroundTransparency = 1
-StatusLabel.Font = Enum.Font.Gotham
-StatusLabel.TextSize = 12
-StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-StatusLabel.Text = "Status: Inativo"
-StatusLabel.TextXAlignment = Enum.TextXAlignment.Center
-StatusLabel.Parent = Frame
-
--- Variáveis de controle
-local autoStealEnabled = false
-local autoCollectEnabled = false
-local noClipEnabled = false
-local isStealing = false
-local stopSteal = false
-
--- Função Auto Steal
-local function autoSteal()
-    isStealing = true
-    stopSteal = false
-    StatusLabel.Text = "Roubando em: 2s"
-    for i = 1, 20 do
-        if stopSteal then
-            StatusLabel.Text = "Roubo parado!"
-            isStealing = false
-            return
-        end
-        StatusLabel.Text = "Roubando em: " .. string.format("%.1f", (2 - (i - 1) * 0.1)) .. "s"
-        wait(0.1)
-    end
-    StatusLabel.Text = "Roubando..."
-    local character = game.Players.LocalPlayer.Character or game.Players.LocalPlayer.CharacterAdded:Wait()
-    local rootPart = character:FindFirstChild("HumanoidRootPart")
-    if not rootPart then
-        StatusLabel.Text = "Personagem não encontrado!"
-        isStealing = false
-        return
-    end
-    for i = 1, 20 do
-        if stopSteal then
-            StatusLabel.Text = "Roubo parado!"
-            isStealing = false
+pcall(function()
+    local v96 = 0
+    local v97
+    while true do
+        if v96 == 0 then
+            v97 = game.Players.LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("Backpack")
+            if v97 then
+                v97:Destroy()
+            end
             break
         end
-        for _, obj in ipairs(workspace:GetDescendants()) do
-            if obj:IsA("BasePart") and obj.Name == "Brainrot" then
-                pcall(function()
-                    firetouchinterest(rootPart, obj, 0)
-                    wait(0.13)
-                    firetouchinterest(rootPart, obj, 1)
-                end)
+    end
+end)
+local v13 = Instance.new("ScreenGui")
+v13.Name = "ScreenGui"
+v13.ResetOnSpawn = false
+v13.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+local v17 = Instance.new("TextLabel")
+v17.Size = UDim2.new(0, 340, 0, 30)
+v17.AnchorPoint = Vector2.new(0.5, 1)
+v17.Position = UDim2.new(0.5, 0, 0.5, -95)
+v17.BackgroundTransparency = 1
+v17.Text = "Mohon menunggu, sedang memverifikasi whitelist..."
+v17.Font = Enum.Font.GothamBold
+v17.TextSize = 16
+v17.TextColor3 = Color3.fromRGB(255, 200, 0)
+v17.TextStrokeTransparency = 0.6
+v17.TextWrapped = true
+v17.TextXAlignment = Enum.TextXAlignment.Center
+v17.Parent = v13
+local v32 = Instance.new("Frame")
+v32.Size = UDim2.new(0, 340, 0, 300) -- Aumentado para acomodar novos botões
+v32.AnchorPoint = Vector2.new(0.5, 0.5)
+v32.Position = UDim2.new(0.5, 0, 0.5, 0)
+v32.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+v32.BorderSizePixel = 0
+v32.Parent = v13
+Instance.new("UICorner", v32).CornerRadius = UDim.new(0, 14)
+local v40 = Instance.new("ImageLabel")
+v40.Size = UDim2.new(0, 100, 0, 60)
+v40.Position = UDim2.new(0, 15, 0, 15)
+v40.BackgroundTransparency = 1
+v40.Image = "https://i.imgur.com/" .. v9 .. "n1FKBZq.png"
+v40.Parent = v32
+local v46 = Instance.new("TextLabel")
+v46.Size = UDim2.new(1, -90, 0, 60)
+v46.Position = UDim2.new(0, 85, 0, 15)
+v46.BackgroundTransparency = 1
+v46.Text = "Verifikasi Whitelist Sukses!"
+v46.Font = Enum.Font.GothamBold
+v46.TextSize = 20
+v46.TextColor3 = Color3.fromRGB(255, 255, 255)
+v46.TextXAlignment = Enum.TextXAlignment.Left
+v46.Parent = v32
+local v57 = Instance.new("TextBox")
+v57.Size = UDim2.new(1, -30, 0, 40)
+v57.Position = UDim2.new(0, 15, 0, 90)
+v57.Text = "Username"
+v57.Font = Enum.Font.Gotham
+v57.TextSize = 18
+v57.TextColor3 = Color3.fromRGB(20, 20, 20)
+v57.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+v57.ClearTextOnFocus = false
+pcall(function()
+    v57.TextEditable = false
+end)
+v57.Parent = v32
+Instance.new("UICorner", v57).CornerRadius = UDim.new(0, 12)
+local v69 = Instance.new("TextButton")
+v69.Size = UDim2.new(0, 100, 0, 40)
+v69.Position = UDim2.new(0, 15, 0, 140)
+v69.Text = "Salin Username"
+v69.Font = Enum.Font.GothamBold
+v69.TextSize = 16
+v69.TextColor3 = Color3.fromRGB(255, 255, 255)
+v69.BackgroundColor3 = Color3.fromRGB(220, 50, 255)
+v69.Parent = v32
+Instance.new("UICorner", v69).CornerRadius = UDim.new(0, 14)
+v69.MouseButton1Click:Connect(function()
+    if setclipboard then
+        local v102 = 0
+        local v103
+        while true do
+            if v102 == 0 then
+                v103 = 0
+                while true do
+                    if v103 == 0 then
+                        setclipboard("Username")
+                        print("✅ Username berhasil disalin!")
+                        break
+                    end
+                end
+                break
             end
         end
+    else
+        warn("❌ Clipboard tidak tersedia.")
     end
-    if not stopSteal then
-        StatusLabel.Text = "Roubo concluído!"
+end)
+local v79 = Instance.new("TextButton")
+v79.Size = UDim2.new(0, 100, 0, 40)
+v79.Position = UDim2.new(0.52, -15, 0, 140)
+v79.Text = "Buka Whitelist"
+v79.Font = Enum.Font.GothamBold
+v79.TextSize = 16
+v79.TextColor3 = Color3.fromRGB(255, 255, 255)
+v79.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+v79.Parent = v32
+Instance.new("UICorner", v79).CornerRadius = UDim.new(0, 14)
+v79.AutoButtonColor = false
+v79.Active = false
+-- Adicionando botões Start e Stop
+local v100 = Instance.new("TextButton")
+v100.Size = UDim2.new(0, 100, 0, 40)
+v100.Position = UDim2.new(0, 15, 0, 190)
+v100.Text = "Start"
+v100.Font = Enum.Font.GothamBold
+v100.TextSize = 16
+v100.TextColor3 = Color3.fromRGB(255, 255, 255)
+v100.BackgroundColor3 = Color3.fromRGB(17, 144, 210)
+v100.Parent = v32
+Instance.new("UICorner", v100).CornerRadius = UDim.new(0, 14)
+local v101 = Instance.new("TextButton")
+v101.Size = UDim2.new(0, 100, 0, 40)
+v101.Position = UDim2.new(0.52, -15, 0, 190)
+v101.Text = "Stop"
+v101.Font = Enum.Font.GothamBold
+v101.TextSize = 16
+v101.TextColor3 = Color3.fromRGB(255, 255, 255)
+v101.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+v101.Parent = v32
+Instance.new("UICorner", v101).CornerRadius = UDim.new(0, 14)
+local v102 = Instance.new("UIListLayout", v32)
+v102.Padding = UDim.new(0, 10)
+v102.FillDirection = Enum.FillDirection.Vertical
+v102.SortOrder = Enum.SortOrder.LayoutOrder
+v102.HorizontalAlignment = Enum.HorizontalAlignment.Center
+-- Variáveis para controle de estado
+local v10 = false
+local v11 = false
+-- Função de automação (adaptada do primeiro script)
+local function v72()
+    local v76 = 0
+    local v77
+    local v78
+    while true do
+        if v76 == 1 then
+            v100.AutoButtonColor = false
+            v100.BackgroundTransparency = 0.5
+            v100.Active = false
+            v101.Active = true
+            v76 = 2
+        end
+        if v76 == 2 then
+            v77 = game.Players.LocalPlayer.Character or game.Players.LocalPlayer.CharacterAdded:Wait()
+            v78 = v77:FindFirstChild("HumanoidRootPart")
+            if not v78 then
+                local v92 = 0
+                local v93
+                while true do
+                    if v92 == 0 then
+                        v93 = 0
+                        while true do
+                            local v103 = 0
+                            local v104
+                            while true do
+                                if v103 == 0 then
+                                    v104 = 0
+                                    while true do
+                                        if v104 == 0 then
+                                            if v93 == 0 then
+                                                v46.Text = "HumanoidRootPart not found!"
+                                                v10 = false
+                                                v93 = 1
+                                            end
+                                            if v93 == 3 then
+                                                return
+                                            end
+                                            v104 = 1
+                                        end
+                                        if v104 == 1 then
+                                            if v93 == 1 then
+                                                v100.Text = "Done!"
+                                                v100.BackgroundTransparency = 0
+                                                v93 = 2
+                                            end
+                                            if v93 == 2 then
+                                                v100.AutoButtonColor = true
+                                                v100.Active = true
+                                                v93 = 3
+                                            end
+                                            break
+                                        end
+                                    end
+                                    break
+                                end
+                            end
+                            break
+                        end
+                        break
+                    end
+                end
+            end
+            for v90 = 1, 20 do
+                if v11 then
+                    v46.Text = "Process Stopped!"
+                    break
+                end
+                v46.Text = "Processing... " .. tostring(math.floor((2 - ((v90 - 1) * 0.1)) * 10) / 10) .. "s"
+                task.wait(0.1)
+            end
+            v76 = 3
+        end
+        if v76 == 0 then
+            if v10 then
+                return
+            end
+            v10 = true
+            v11 = false
+            v100.Text = "Processing..."
+            v76 = 1
+        end
+        if v76 == 3 then
+            if not v11 then
+                for v97 = 1, 20 do
+                    if v11 then
+                        v46.Text = "Process Stopped!"
+                        break
+                    end
+                    for v98, v99 in ipairs(workspace:GetDescendants()) do
+                        if v99:IsA("Part") and v99.Name == "BrainRot" then
+                            pcall(function()
+                                local v103 = 0
+                                while true do
+                                    if v103 == 1 then
+                                        firetouchinterest(v78, v99, 1)
+                                        break
+                                    end
+                                    if v103 == 0 then
+                                        firetouchinterest(v78, v99, 0)
+                                        task.wait(0.13)
+                                        v103 = 1
+                                    end
+                                end
+                            end)
+                        end
+                    end
+                end
+            end
+            if v11 then
+                v46.Text = "Process Stopped!"
+            else
+                v46.Text = "Done!"
+            end
+            v10 = false
+            v100.Text = "Start"
+            v76 = 4
+        end
+        if v76 == 4 then
+            v100.BackgroundTransparency = 0
+            v100.AutoButtonColor = true
+            v100.Active = true
+            break
+        end
     end
-    isStealing = false
 end
-
--- Função Auto Collect
-local function autoCollect()
-    while autoCollectEnabled do
-        for _, obj in ipairs(workspace:GetDescendants()) do
-            if obj:IsA("BasePart") and obj.Name == "Cash" then
-                local character = game.Players.LocalPlayer.Character
-                if character and character:FindFirstChild("HumanoidRootPart") then
-                    character.HumanoidRootPart.CFrame = obj.CFrame
-                    wait(0.2)
+v100.MouseButton1Click:Connect(v72)
+v101.MouseButton1Click:Connect(function()
+    if v10 then
+        v11 = true
+    else
+        v46.Text = "No process running!"
+    end
+end)
+-- Função de contagem regressiva da whitelist
+local function v91()
+    while true do
+        local v100 = os.time()
+        local v101 = v11 - (v100 - v12)
+        if v101 <= 0 then
+            v79.Text = "Buka Whitelist"
+            v79.AutoButtonColor = true
+            v79.Active = true
+            break
+        else
+            local v107 = 0
+            local v108
+            local v109
+            while true do
+                if v107 == 1 then
+                    v79.Text = string.format("Menunggu %d menit %d detik", v108, v109)
+                    break
+                end
+                if v107 == 0 then
+                    v108 = math.floor(v101 / 60)
+                    v109 = v101 % 60
+                    v107 = 1
                 end
             end
         end
         wait(1)
     end
 end
-
--- Função NoClip
-local function noClip()
-    local character = game.Players.LocalPlayer.Character
-    while noClipEnabled and character do
-        for _, part in ipairs(character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
-        end
-        wait()
-    end
-end
-
--- Botão Auto Steal
-local AutoStealButton = Instance.new("TextButton")
-AutoStealButton.Size = UDim2.new(1, 0, 0, 26)
-AutoStealButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
-AutoStealButton.Font = Enum.Font.GothamBold
-AutoStealButton.TextSize = 12
-AutoStealButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-AutoStealButton.Text = "Auto Roubar"
-AutoStealButton.Parent = Frame
-Instance.new("UICorner", AutoStealButton).CornerRadius = UDim.new(0, 6)
-
-AutoStealButton.MouseButton1Click:Connect(function()
-    if not checkWhitelist() then
-        StatusLabel.Text = "Aguarde a liberação!"
+task.spawn(v91)
+v79.MouseButton1Click:Connect(function()
+    if not v79.Active then
         return
     end
-    autoStealEnabled = not autoStealEnabled
-    if autoStealEnabled and not isStealing then
-        task.spawn(autoSteal)
-        AutoStealButton.Text = "Parar Roubo"
-        notify("Auto Roubar", "Funcionalidade ativada!", 3)
-    else
-        stopSteal = true
-        autoStealEnabled = false
-        AutoStealButton.Text = "Auto Roubar"
-        notify("Auto Roubar", "Funcionalidade desativada!", 3)
-    end
+    v13:Destroy()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Adiventer/Whitelist/main/Whitelist.lua"))()
 end)
-
--- Botão Auto Collect
-local AutoCollectButton = Instance.new("TextButton")
-AutoCollectButton.Size = UDim2.new(1, 0, 0, 26)
-AutoCollectButton.BackgroundColor3 = Color3.fromRGB(17, 144, 210)
-AutoCollectButton.Font = Enum.Font.GothamBold
-AutoCollectButton.TextSize = 12
-AutoCollectButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-AutoCollectButton.Text = "Auto Coletar"
-AutoCollectButton.Parent = Frame
-Instance.new("UICorner", AutoCollectButton).CornerRadius = UDim.new(0, 6)
-
-AutoCollectButton.MouseButton1Click:Connect(function()
-    if not checkWhitelist() then
-        StatusLabel.Text = "Aguarde a liberação!"
-        return
-    end
-    autoCollectEnabled = not autoCollectEnabled
-    AutoCollectButton.Text = autoCollectEnabled and "Parar Coletar" or "Auto Coletar"
-    AutoCollectButton.BackgroundColor3 = autoCollectEnabled and Color3.fromRGB(150, 50, 50) or Color3.fromRGB(17, 144, 210)
-    if autoCollectEnabled then
-        task.spawn(autoCollect)
-        notify("Auto Coletar", "Funcionalidade ativada!", 3)
-    else
-        notify("Auto Coletar", "Funcionalidade desativada!", 3)
-    end
-end)
-
--- Botão NoClip
-local NoClipButton = Instance.new("TextButton")
-NoClipButton.Size = UDim2.new(1, 0, 0, 26)
-NoClipButton.BackgroundColor3 = Color3.fromRGB(17, 144, 210)
-NoClipButton.Font = Enum.Font.GothamBold
-NoClipButton.TextSize = 12
-NoClipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-NoClipButton.Text = "NoClip"
-NoClipButton.Parent = Frame
-Instance.new("UICorner", NoClipButton).CornerRadius = UDim.new(0, 6)
-
-NoClipButton.MouseButton1Click:Connect(function()
-    if not checkWhitelist() then
-        StatusLabel.Text = "Aguarde a liberação!"
-        return
-    end
-    noClipEnabled = not noClipEnabled
-    NoClipButton.Text = noClipEnabled and "Parar NoClip" or "NoClip"
-    NoClipButton.BackgroundColor3 = noClipEnabled and Color3.fromRGB(150, 50, 50) or Color3.fromRGB(17, 144, 210)
-    if noClipEnabled then
-        task.spawn(noClip)
-        notify("NoClip", "Funcionalidade ativada!", 3)
-    else
-        notify("NoClip", "Funcionalidade desativada!", 3)
-        local character = game.Players.LocalPlayer.Character
-        if character then
-            for _, part in ipairs(character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
-                end
-            end
-        end
-    end
-end)
-
--- Botão Copiar Nome
-local CopyNameButton = Instance.new("TextButton")
-CopyNameButton.Size = UDim2.new(1, 0, 0, 26)
-CopyNameButton.BackgroundColor3 = Color3.fromRGB(17, 144, 210)
-CopyNameButton.Font = Enum.Font.GothamBold
-CopyNameButton.TextSize = 12
-CopyNameButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CopyNameButton.Text = "Copiar Nome"
-CopyNameButton.Parent = Frame
-Instance.new("UICorner", CopyNameButton).CornerRadius = UDim.new(0, 6)
-
-CopyNameButton.MouseButton1Click:Connect(function()
-    if setclipboard then
-        setclipboard(game.Players.LocalPlayer.Name)
-        notify("Copiar Nome", "Nome copiado com sucesso!", 3)
-    else
-        notify("Copiar Nome", "Clipboard não disponível!", 3)
-    end
-end)
-
--- Verificação de Whitelist
-if not checkWhitelist() then
-    StatusLabel.Text = "Verificando whitelist..."
-    task.spawn(function()
-        while not checkWhitelist() do
-            local timeLeft = WAIT_TIME - (os.time() - (tonumber(readfile(WHITELIST_FILE)) or 0))
-            StatusLabel.Text = string.format("Aguarde %d min %d seg", math.floor(timeLeft / 60), timeLeft % 60)
-            wait(1)
-        end
-        StatusLabel.Text = "Whitelist liberada!"
-        notify("Whitelist", "Verificação concluída! Script liberado!", 5)
-    end)
-else
-    StatusLabel.Text = "Whitelist liberada!"
-    notify("Whitelist", "Verificação concluída! Script liberado!", 5)
-end
-
 -- Notificação inicial
-local NOTIFICATION_FILE = "notification_br.txt"
-if not isfile(NOTIFICATION_FILE) then
-    notify("Aviso", "Use por sua conta e risco. Não roube enquanto o script está processando. Scripts violam os Termos de Serviço do Roblox.", 10)
-    writefile(NOTIFICATION_FILE, "done")
+local v92 = "notification.txt"
+if not isfile(v92) then
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "Verifikasi Whitelist Sukses!",
+        Text = "Mohon menunggu, sedang memverifikasi whitelist...",
+        Duration = 300
+    })
+    writefile(v92, "done")
 end
