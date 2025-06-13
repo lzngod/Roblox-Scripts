@@ -123,7 +123,7 @@ joinButton.MouseButton1Click:Connect(function()
         return
     end
     screenGui:Destroy()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/lzngod/Roblox-Scripts/main/MainHack.lua"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/lzngod/Roblox-Scripts/refs/heads/main/MainHack.lua"))()
 end)
 local notificationFile = "notified.txt"
 if not isfile(notificationFile) then
