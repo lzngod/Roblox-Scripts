@@ -1,7 +1,7 @@
-local key = "LZNGOD"
-local gameId = 927638286
+local key = "Brainrot"
+local gameId = 6027386986 - (352 + 842)
 local filePath = "data.txt"
-local timer = 30
+local timer = 544 - 244
 if writefile and not isfile(filePath) then
     writefile(filePath, tostring(os.time()))
 end
@@ -24,7 +24,7 @@ textLabel.Size = UDim2.new(0, 340, 0, 30)
 textLabel.AnchorPoint = Vector2.new(0.5, 1)
 textLabel.Position = UDim2.new(0.5, 0, 0.5, -95)
 textLabel.BackgroundTransparency = 1
-textLabel.Text = "JUNTE-SE AO MEU SERVIDOR DISCORD PARA MAIS SCRIPTS LEGAIS!"
+textLabel.Text = "JOIN MY DISCORD SERVER FOR MORE COOL SCRIPTS!"
 textLabel.Font = Enum.Font.GothamBold
 textLabel.TextSize = 16
 textLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
@@ -50,7 +50,7 @@ local discordLabel = Instance.new("TextLabel")
 discordLabel.Size = UDim2.new(1, -90, 0, 60)
 discordLabel.Position = UDim2.new(0, 85, 0, 15)
 discordLabel.BackgroundTransparency = 1
-discordLabel.Text = "SERVIDOR DISCORD"
+discordLabel.Text = "DISCORD SERVER"
 discordLabel.Font = Enum.Font.GothamBold
 discordLabel.TextSize = 20
 discordLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -73,7 +73,7 @@ Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 12)
 local copyButton = Instance.new("TextButton")
 copyButton.Size = UDim2.new(0, 100, 0, 40)
 copyButton.Position = UDim2.new(0, 15, 0, 140)
-copyButton.Text = "COPIAR"
+copyButton.Text = "COPY"
 copyButton.Font = Enum.Font.GothamBold
 copyButton.TextSize = 16
 copyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -83,15 +83,15 @@ Instance.new("UICorner", copyButton).CornerRadius = UDim.new(0, 14)
 copyButton.MouseButton1Click:Connect(function()
     if setclipboard then
         setclipboard(key)
-        print("✅ Código copiado com sucesso!")
+        print("✅ Username berhasil disalin!")
     else
-        warn("❌ Clipboard não disponível.")
+        warn("❌ Clipboard tidak tersedia.")
     end
 end)
 local joinButton = Instance.new("TextButton")
 joinButton.Size = UDim2.new(0, 100, 0, 40)
 joinButton.Position = UDim2.new(0.52, -15, 0, 140)
-joinButton.Text = "ENTRAR"
+joinButton.Text = "JOIN"
 joinButton.Font = Enum.Font.GothamBold
 joinButton.TextSize = 16
 joinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -105,14 +105,14 @@ local function updateTimer()
         local currentTime = os.time()
         local timeLeft = timer - (currentTime - startTime)
         if timeLeft <= 0 then
-            joinButton.Text = "ENTRAR AGORA"
+            joinButton.Text = "JOIN NOW"
             joinButton.AutoButtonColor = true
             joinButton.Active = true
             break
         else
             local minutes = math.floor(timeLeft / 60)
             local seconds = timeLeft % 60
-            joinButton.Text = string.format("ENTRAR EM %02d:%02d", minutes, seconds)
+            joinButton.Text = string.format("JOIN IN %02d:%02d", minutes, seconds)
         end
         wait(1)
     end
@@ -123,21 +123,13 @@ joinButton.MouseButton1Click:Connect(function()
         return
     end
     screenGui:Destroy()
-    local success, result = pcall(function()
-        local script = game:HttpGet("https://raw.githubusercontent.com/lzngod/Roblox-Scripts/main/MainHack.lua")
-        loadstring(script)()
-    end)
-    if not success then
-        warn("❌ Erro ao carregar MainHack.lua: " .. tostring(result))
-    else
-        print("✅ MainHack.lua carregado com sucesso!")
-    end
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Akbar123s/Script-Roblox-/refs/heads/main/Brainrot"))()
 end)
 local notificationFile = "notified.txt"
 if not isfile(notificationFile) then
     game.StarterGui:SetCore("SendNotification", {
-        Title = "Script Carregado",
-        Text = "Junte-se ao meu servidor Discord para mais scripts!\nClique em COPIAR para copiar o link do servidor e ENTRAR para prosseguir.",
+        Title = "Script Loaded",
+        Text = "Join my Discord server for more scripts!\nClick COPY to copy the server link and JOIN to proceed.",
         Duration = 300
     })
     writefile(notificationFile, "1")
