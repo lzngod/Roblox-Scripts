@@ -123,7 +123,15 @@ joinButton.MouseButton1Click:Connect(function()
         return
     end
     screenGui:Destroy()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/lzngod/Roblox-Scripts/refs/heads/main/MainHack.lua"))()
+    local success, result = pcall(function()
+        local script = game:HttpGet("https://raw.githubusercontent.com/lzngod/Roblox-Scripts/main/MainHack.lua")
+        loadstring(script)()
+    end)
+    if not success then
+        warn("❌ Erro ao carregar MainHack.lua: " .. tostring(result))
+    else
+        print("✅ MainHack.lua carregado com sucesso!")
+    end
 end)
 local notificationFile = "notified.txt"
 if not isfile(notificationFile) then
