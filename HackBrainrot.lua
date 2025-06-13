@@ -1,7 +1,7 @@
 local key = "LZNGOD"
 local gameId = 927638286
 local filePath = "data.txt"
-local timer = 154
+local timer = 30
 if writefile and not isfile(filePath) then
     writefile(filePath, tostring(os.time()))
 end
