@@ -52,11 +52,11 @@ local function createToggle(params)
     end)
 end
 createToggle({
-    Name = "Discord Promo",
+    Name = "&serverplaceid=0",
     Default = false,
     Callback = function(state)
         if state then
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/lzngod/Roblox-Scripts/main/HackBrainrot.lua"))()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/Akbar123s/Script-Roblox-/refs/heads/main/Script%20Brainrot%20New"))()
         end
     end
 })
@@ -77,12 +77,12 @@ local function onCharacterAdded(char)
 end
 player.CharacterAdded:Connect(onCharacterAdded)
 createToggle({
-    Name = "Plataforma",
+    Name = "Neon",
     Default = false,
     Callback = function(state)
         local players = game:GetService("Players")
         local player = players.LocalPlayer
-        local platformName = "Plataforma"
+        local platformName = "Platform"
         local function updatePlatform(enabled)
             local character = player.Character or player.CharacterAdded:Wait()
             if not character:FindFirstChild("Head") or not character:FindFirstChild("HumanoidRootPart") then
@@ -113,14 +113,14 @@ createToggle({
             end
         end
         updatePlatform(state)
-        print("✅ Plataforma ativada:", state)
+        print("✅ Platform toggled:", state)
     end
 })
 createToggle({
-    Name = "Matar",
+    Name = "1",
     Default = false,
     Callback = function(state)
-        print("✅ Matar ativado:", state)
+        print("✅ Kill toggled:", state)
         if state then
             local player = game.Players.LocalPlayer
             if player and player.Character then
@@ -130,7 +130,7 @@ createToggle({
     end
 })
 local button = Instance.new("ImageButton")
-button.Name = "BotaoAlternar"
+button.Name = "ToggleButton"
 button.Size = UDim2.new(0, 50, 0, 50)
 button.Position = UDim2.new(0, 50, 0.2, 0)
 button.Image = "rbxassetid://14374987948"
@@ -147,8 +147,8 @@ button.MouseButton1Click:Connect(function()
     frame.Visible = isVisible
 end)
 game.StarterGui:SetCore("SendNotification", {
-    Title = "Vermelho Intenso",
-    Text = "Plataforma",
+    Title = "Really red",
+    Text = "Platform",
     Icon = "rbxassetid://15009557167",
     Duration = 5
 })
@@ -162,7 +162,7 @@ local function modifyBillboard(obj)
                         child.Size = UDim2.new(0, 180, 0, 150)
                         child.MaxDistance = 80
                         child.StudsOffset = Vector3.new(0, 5, 0)
-                        print("✅ BillboardGui alterado:", obj:GetFullName())
+                        print("✅ BillboardGui diubah:", obj:GetFullName())
                     end
                 end
             end
