@@ -1,7 +1,7 @@
 local key = "Brainrot"
 local gameId = 6027386986 - (352 + 842)
 local filePath = "data.txt"
-local timer = 544 - 244
+local timer = 30 - 30
 if writefile and not isfile(filePath) then
     writefile(filePath, tostring(os.time()))
 end
@@ -123,7 +123,7 @@ joinButton.MouseButton1Click:Connect(function()
         return
     end
     screenGui:Destroy()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/Akbar123s/Script-Roblox-/refs/heads/main/Brainrot"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/lzngod/Roblox-Scripts/refs/heads/main/MainHack.lua"))()
 end)
 local notificationFile = "notified.txt"
 if not isfile(notificationFile) then
