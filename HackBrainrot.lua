@@ -71,19 +71,14 @@ local function protectPhysicsAndStability()
     local originalPosition = humanoidRootPart.Position
     local originalOrientation = humanoidRootPart.Orientation
 
-    -- Congelar física temporariamente
-    local function freezePhysics()
-        if isActive and humanoidRootPart then
-            humanoidRootPart.Anchored = true
-            wait(0.1) -- Tempo mínimo pra bloquear movimento
-            humanoidRootPart.Anchored = false
-            if humanoidRootPart.Position ~= originalPosition or humanoidRootPart.Orientation ~= originalOrientation then
-                humanoidRootPart.Position = originalPosition
-                humanoidRootPart.Orientation = originalOrientation
-                print("Knockback bloqueado, posição e orientação restauradas")
-            end
+    -- Restaurar posição e orientação se alteradas
+    humanoidRootPart.Changed:Connect(function(property)
+        if isActive and property == "Position" and humanoidRootPart.Position ~= originalPosition then
+            humanoidRootPart.Position = originalPosition
+            humanoidRootPart.Orientation = originalOrientation
+            print("Knockback bloqueado, posição e orientação restauradas")
         end
-    end
+    end)
 
     -- Bloquear estados de Humanoid
     humanoid.Changed:Connect(function(property)
@@ -98,7 +93,7 @@ local function protectPhysicsAndStability()
         end
     end)
 
-    -- Correção de teletransporte ou bugs
+    -- Correção de teletransporte fora do mapa
     RunService.Heartbeat:Connect(function()
         if isActive and humanoidRootPart then
             local x, y, z = humanoidRootPart.Position.X, humanoidRootPart.Position.Y, humanoidRootPart.Position.Z
@@ -107,7 +102,6 @@ local function protectPhysicsAndStability()
                 humanoidRootPart.Orientation = originalOrientation
                 print("Teletransporte fora do mapa corrigido")
             end
-            freezePhysics()
         end
     end)
 
