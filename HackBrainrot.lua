@@ -24,7 +24,7 @@ local Frame = Instance.new("Frame")
 Frame.Parent = ScreenGui
 Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Frame.Position = UDim2.new(0, 20, 0, 100)
-Frame.Size = UDim2.new(0, 360, 0, 200)
+Frame.Size = UDim2.new(0, 360, 0, 250) -- Aumentado para acomodar todos os elementos
 Frame.Active = true
 Frame.Draggable = true
 local UICorner_Frame = Instance.new("UICorner")
@@ -34,7 +34,7 @@ UICorner_Frame.Parent = Frame
 -- Layout para organizar os elementos
 local UIListLayout = Instance.new("UIListLayout")
 UIListLayout.Parent = Frame
-UIListLayout.Padding = UDim.new(0, 5)
+UIListLayout.Padding = UDim.new(0, 10)
 UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
@@ -75,10 +75,10 @@ local CopyButton = Instance.new("TextButton")
 CopyButton.Parent = Frame
 CopyButton.BackgroundColor3 = Color3.fromRGB(0, 145, 255)
 CopyButton.Size = UDim2.new(0, 230, 0, 30)
-CopyButton.Font = Enum.Font.GothamBold
 CopyButton.Text = "Copy Username"
-CopyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CopyButton.Font = Enum.Font.GothamBold
 CopyButton.TextSize = 15
+CopyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 local UICorner_Copy = Instance.new("UICorner")
 UICorner_Copy.CornerRadius = UDim.new(0, 8)
 UICorner_Copy.Parent = CopyButton
@@ -88,10 +88,10 @@ local StealButton = Instance.new("TextButton")
 StealButton.Parent = Frame
 StealButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- Cinza quando desativado
 StealButton.Size = UDim2.new(0, 230, 0, 30)
-StealButton.Font = Enum.Font.GothamBold
 StealButton.Text = "Click Steal"
-StealButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+StealButton.Font = Enum.Font.GothamBold
 StealButton.TextSize = 15
+StealButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 local UICorner_Steal = Instance.new("UICorner")
 UICorner_Steal.CornerRadius = UDim.new(0, 8)
 UICorner_Steal.Parent = StealButton
@@ -101,10 +101,10 @@ local StatusLabel = Instance.new("TextLabel")
 StatusLabel.Parent = Frame
 StatusLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 StatusLabel.Size = UDim2.new(0, 340, 0, 30)
-StatusLabel.Font = Enum.Font.GothamBold
 StatusLabel.Text = "Checking group status..."
-StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+StatusLabel.Font = Enum.Font.GothamBold
 StatusLabel.TextSize = 14
+StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 local UICorner_Status = Instance.new("UICorner")
 UICorner_Status.CornerRadius = UDim.new(0, 6)
 UICorner_Status.Parent = StatusLabel
@@ -122,24 +122,39 @@ local UICorner_Close = Instance.new("UICorner")
 UICorner_Close.CornerRadius = UDim.new(0, 6)
 UICorner_Close.Parent = CloseButton
 
--- Posicionamento dinâmico com UIListLayout
-local function updateLayout()
-    local padding = 5
-    local yOffset = 10 -- Início do título
-    TitleLabel.Position = UDim2.new(0.5, 0, 0, yOffset)
-    yOffset = yOffset + 40 -- Título + padding
-    Avatar.Position = UDim2.new(0, 15, 0, yOffset)
-    UsernameLabel.Position = UDim2.new(0, 110, 0, yOffset + 30)
-    yOffset = yOffset + 90 -- Avatar + padding
-    CopyButton.Position = UDim2.new(0, 65, 0, yOffset)
-    yOffset = yOffset + 40 -- Botão Copy + padding
-    StealButton.Position = UDim2.new(0, 65, 0, yOffset)
-    yOffset = yOffset + 40 -- Botão Steal + padding
-    StatusLabel.Position = UDim2.new(0, 10, 0, yOffset)
-    yOffset = yOffset + 40 -- Status + padding
-    CloseButton.Position = UDim2.new(1, -30, 0, 5)
-end
-updateLayout()
+-- Botão Minimize
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Parent = Frame
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
+MinimizeButton.Position = UDim2.new(1, -60, 0, 5)
+MinimizeButton.Text = "-"
+MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.TextSize = 14
+MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+local UICorner_Minimize = Instance.new("UICorner")
+UICorner_Minimize.CornerRadius = UDim.new(0, 6)
+UICorner_Minimize.Parent = MinimizeButton
+
+-- Círculo minimizado
+local CircleFrame = Instance.new("Frame")
+CircleFrame.Parent = ScreenGui
+CircleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+CircleFrame.Size = UDim2.new(0, 50, 0, 50)
+CircleFrame.Position = UDim2.new(0, 20, 0, 100)
+CircleFrame.Visible = false
+local UICorner_Circle = Instance.new("UICorner")
+UICorner_Circle.CornerRadius = UDim.new(1, 0) -- Círculo completo
+UICorner_Circle.Parent = CircleFrame
+local CircleText = Instance.new("TextLabel")
+CircleText.Parent = CircleFrame
+CircleText.Size = UDim2.new(1, 0, 1, 0)
+CircleText.BackgroundTransparency = 1
+CircleText.Text = "+"
+CircleText.Font = Enum.Font.GothamBold
+CircleText.TextSize = 20
+CircleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+CircleText.TextAlignment = Enum.TextAlignment.Center
 
 -- Efeitos de hover
 local function hoverEffect(btn, normalColor, hoverColor)
@@ -153,6 +168,7 @@ end
 hoverEffect(CopyButton, Color3.fromRGB(0, 145, 255), Color3.fromRGB(0, 120, 220))
 hoverEffect(StealButton, Color3.fromRGB(30, 200, 100), Color3.fromRGB(25, 180, 90))
 hoverEffect(CloseButton, Color3.fromRGB(200, 50, 50), Color3.fromRGB(180, 30, 30))
+hoverEffect(MinimizeButton, Color3.fromRGB(150, 150, 150), Color3.fromRGB(120, 120, 120))
 
 -- Função para copiar username
 CopyButton.MouseButton1Click:Connect(function()
@@ -169,6 +185,19 @@ end)
 -- Fechar GUI
 CloseButton.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
+end)
+
+-- Minimizar GUI
+MinimizeButton.MouseButton1Click:Connect(function()
+    Frame.Visible = false
+    CircleFrame.Visible = true
+    CircleFrame.Position = Frame.Position
+end)
+
+-- Restaurar GUI
+CircleFrame.MouseButton1Click:Connect(function()
+    CircleFrame.Visible = false
+    Frame.Visible = true
 end)
 
 -- Função para encontrar a base do jogador
@@ -207,7 +236,7 @@ local function isHoldingBrainrot()
     local char = player.Character
     if char then
         for _, obj in ipairs(char:GetChildren()) do
-            if obj:IsA("Model") and obj.Name:find("Brainrot") then
+            if obj:IsA("Model") and (obj.Name:find("Brainrot") or obj.Name:find("BrainRot")) then
                 return true
             end
         end
