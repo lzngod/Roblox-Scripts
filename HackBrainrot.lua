@@ -1,340 +1,108 @@
--- Configurações iniciais
-local groupId = 34479814 -- ID do grupo
-local username = "FaDhenGaming"
-local userId = 6027385792
-
-local Players = game:GetService("Players")
+-- Script de log para monitorar ações em Steal a Brainrot
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
--- Esperar até o jogador estar completamente carregado
-if not player:IsDescendantOf(Players) then
-    player.AncestryChanged:Wait()
+-- Tabela para armazenar nomes de Brainrots conhecidos
+local brainrotNames = {"Odin", "Din", "Dun"} -- Adicione mais nomes conforme encontrar
+
+-- Função para logar mensagens no console
+local function logMessage(message)
+    print("[LOG " .. os.time() .. "]: " .. message)
 end
 
--- Criar GUI principal
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "CombinedGUI"
-ScreenGui.Parent = game.CoreGui
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.ResetOnSpawn = false
+-- Monitorar RemoteEvents e RemoteFunctions em ReplicatedStorage
+local function monitorRemotes()
+    for _, remote in pairs(ReplicatedStorage:GetChildren()) do
+        if remote:IsA("RemoteEvent") then
+            logMessage("Monitorando RemoteEvent: " .. remote.Name)
+            remote.OnClientEvent:Connect(function(...)
+                local args = {...}
+                local argString = ""
+                for i, arg in pairs(args) do
+                    argString = argString .. tostring(arg) .. (i < #args and ", " or "")
+                end
+                logMessage("RemoteEvent disparado: " .. remote.Name .. " | Argumentos: " .. argString)
+            end)
+            -- Tentar capturar FireServer do cliente
+            local oldFireServer = remote.FireServer
+            remote.FireServer = function(self, ...)
+                local args = {...}
+                local argString = ""
+                for i, arg in pairs(args) do
+                    argString = argString .. tostring(arg) .. (i < #args and ", " or "")
+                end
+                logMessage("FireServer chamado em: " .. remote.Name .. " | Argumentos: " .. argString)
+                return oldFireServer(self, ...)
+            end
+        elseif remote:IsA("RemoteFunction") then
+            logMessage("Monitorando RemoteFunction: " .. remote.Name)
+            -- Tentar capturar InvokeServer do cliente
+            local oldInvokeServer = remote.InvokeServer
+            remote.InvokeServer = function(self, ...)
+                local args = {...}
+                local argString = ""
+                for i, arg in pairs(args) do
+                    argString = argString .. tostring(arg) .. (i < #args and ", " or "")
+                end
+                logMessage("InvokeServer chamado em: " .. remote.Name .. " | Argumentos: " .. argString)
+                return oldInvokeServer(self, ...)
+            end
+        end
+    end
+end
 
--- Frame principal (arrastável)
-local Frame = Instance.new("Frame")
-Frame.Parent = ScreenGui
-Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Frame.Position = UDim2.new(0, 20, 0, 100)
-Frame.Size = UDim2.new(0, 360, 0, 250) -- Aumentado para acomodar todos os elementos
-Frame.Active = true
-Frame.Draggable = true
-local UICorner_Frame = Instance.new("UICorner")
-UICorner_Frame.CornerRadius = UDim.new(0, 10)
-UICorner_Frame.Parent = Frame
-
--- Layout para organizar os elementos
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Parent = Frame
-UIListLayout.Padding = UDim.new(0, 10)
-UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
--- Título
-local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Parent = Frame
-TitleLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-TitleLabel.BackgroundTransparency = 0.25
-TitleLabel.Size = UDim2.new(0, 340, 0, 30)
-TitleLabel.Text = "Follow me and join my group to unlock Steal!"
-TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.TextSize = 18
-TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-local UICorner_Title = Instance.new("UICorner")
-UICorner_Title.CornerRadius = UDim.new(0, 10)
-UICorner_Title.Parent = TitleLabel
-
--- Avatar
-local Avatar = Instance.new("ImageLabel")
-Avatar.Parent = Frame
-Avatar.Size = UDim2.new(0, 80, 0, 80)
-Avatar.BackgroundTransparency = 1
-Avatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId="..userId.."&width=100&height=100&format=png"
-
--- Label para username
-local UsernameLabel = Instance.new("TextLabel")
-UsernameLabel.Parent = Frame
-UsernameLabel.Size = UDim2.new(0, 230, 0, 25)
-UsernameLabel.BackgroundTransparency = 1
-UsernameLabel.Text = "Username: " .. username
-UsernameLabel.Font = Enum.Font.GothamSemibold
-UsernameLabel.TextSize = 16
-UsernameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-UsernameLabel.TextXAlignment = Enum.TextXAlignment.Left
-
--- Botão Copy Username
-local CopyButton = Instance.new("TextButton")
-CopyButton.Parent = Frame
-CopyButton.BackgroundColor3 = Color3.fromRGB(0, 145, 255)
-CopyButton.Size = UDim2.new(0, 230, 0, 30)
-CopyButton.Text = "Copy Username"
-CopyButton.Font = Enum.Font.GothamBold
-CopyButton.TextSize = 15
-CopyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-local UICorner_Copy = Instance.new("UICorner")
-UICorner_Copy.CornerRadius = UDim.new(0, 8)
-UICorner_Copy.Parent = CopyButton
-
--- Botão Steal (inicialmente desativado)
-local StealButton = Instance.new("TextButton")
-StealButton.Parent = Frame
-StealButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- Cinza quando desativado
-StealButton.Size = UDim2.new(0, 230, 0, 30)
-StealButton.Text = "Click Steal"
-StealButton.Font = Enum.Font.GothamBold
-StealButton.TextSize = 15
-StealButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-local UICorner_Steal = Instance.new("UICorner")
-UICorner_Steal.CornerRadius = UDim.new(0, 8)
-UICorner_Steal.Parent = StealButton
-
--- Label de status
-local StatusLabel = Instance.new("TextLabel")
-StatusLabel.Parent = Frame
-StatusLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-StatusLabel.Size = UDim2.new(0, 340, 0, 30)
-StatusLabel.Text = "Checking group status..."
-StatusLabel.Font = Enum.Font.GothamBold
-StatusLabel.TextSize = 14
-StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-local UICorner_Status = Instance.new("UICorner")
-UICorner_Status.CornerRadius = UDim.new(0, 6)
-UICorner_Status.Parent = StatusLabel
-
--- Botão Close
-local CloseButton = Instance.new("TextButton")
-CloseButton.Parent = Frame
-CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-CloseButton.Size = UDim2.new(0, 25, 0, 25)
-CloseButton.Text = "X"
-CloseButton.Font = Enum.Font.GothamBold
-CloseButton.TextSize = 14
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-local UICorner_Close = Instance.new("UICorner")
-UICorner_Close.CornerRadius = UDim.new(0, 6)
-UICorner_Close.Parent = CloseButton
-
--- Botão Minimize
-local MinimizeButton = Instance.new("TextButton")
-MinimizeButton.Parent = Frame
-MinimizeButton.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
-MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
-MinimizeButton.Position = UDim2.new(1, -60, 0, 5)
-MinimizeButton.Text = "-"
-MinimizeButton.Font = Enum.Font.GothamBold
-MinimizeButton.TextSize = 14
-MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-local UICorner_Minimize = Instance.new("UICorner")
-UICorner_Minimize.CornerRadius = UDim.new(0, 6)
-UICorner_Minimize.Parent = MinimizeButton
-
--- Círculo minimizado
-local CircleFrame = Instance.new("Frame")
-CircleFrame.Parent = ScreenGui
-CircleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-CircleFrame.Size = UDim2.new(0, 50, 0, 50)
-CircleFrame.Position = UDim2.new(0, 20, 0, 100)
-CircleFrame.Visible = false
-local UICorner_Circle = Instance.new("UICorner")
-UICorner_Circle.CornerRadius = UDim.new(1, 0) -- Círculo completo
-UICorner_Circle.Parent = CircleFrame
-local CircleText = Instance.new("TextLabel")
-CircleText.Parent = CircleFrame
-CircleText.Size = UDim2.new(1, 0, 1, 0)
-CircleText.BackgroundTransparency = 1
-CircleText.Text = "+"
-CircleText.Font = Enum.Font.GothamBold
-CircleText.TextSize = 20
-CircleText.TextColor3 = Color3.fromRGB(255, 255, 255)
-CircleText.TextAlignment = Enum.TextAlignment.Center
-
--- Efeitos de hover
-local function hoverEffect(btn, normalColor, hoverColor)
-    btn.MouseEnter:Connect(function()
-        btn.BackgroundColor3 = hoverColor
+-- Monitorar criação e destruição de Brainrots no Workspace
+local function monitorWorkspace()
+    logMessage("Monitorando Workspace para Brainrots: " .. table.concat(brainrotNames, ", "))
+    Workspace.ChildAdded:Connect(function(child)
+        for _, name in pairs(brainrotNames) do
+            if child.Name == name then
+                logMessage("Novo Brainrot criado: " .. child.Name .. " | Caminho: " .. child:GetFullName())
+                -- Monitorar propriedades do Brainrot
+                monitorProperties(child)
+            end
+        end
     end)
-    btn.MouseLeave:Connect(function()
-        btn.BackgroundColor3 = normalColor
+    Workspace.ChildRemoved:Connect(function(child)
+        for _, name in pairs(brainrotNames) do
+            if child.Name == name then
+                logMessage("Brainrot removido: " .. child.Name .. " | Caminho: " .. child:GetFullName())
+            end
+        end
     end)
 end
-hoverEffect(CopyButton, Color3.fromRGB(0, 145, 255), Color3.fromRGB(0, 120, 220))
-hoverEffect(StealButton, Color3.fromRGB(30, 200, 100), Color3.fromRGB(25, 180, 90))
-hoverEffect(CloseButton, Color3.fromRGB(200, 50, 50), Color3.fromRGB(180, 30, 30))
-hoverEffect(MinimizeButton, Color3.fromRGB(150, 150, 150), Color3.fromRGB(120, 120, 120))
 
--- Função para copiar username
-CopyButton.MouseButton1Click:Connect(function()
-    if setclipboard then
-        setclipboard(username)
-        StatusLabel.Text = "✅ Username Copied!"
-        wait(1.5)
-        StatusLabel.Text = "Ready"
-    else
-        StatusLabel.Text = "❌ Clipboard Error"
-    end
-end)
-
--- Fechar GUI
-CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
-
--- Minimizar GUI
-MinimizeButton.MouseButton1Click:Connect(function()
-    Frame.Visible = false
-    CircleFrame.Visible = true
-    CircleFrame.Position = Frame.Position
-end)
-
--- Restaurar GUI
-CircleFrame.MouseButton1Click:Connect(function()
-    CircleFrame.Visible = false
-    Frame.Visible = true
-end)
-
--- Função para encontrar a base do jogador
-local function findPlayerBase()
-    local possibleFolders = {"Plots", "Bases", "PlayerBases", "Tycoon", "PlayerPlots"}
-    for _, folderName in ipairs(possibleFolders) do
-        local folder = Workspace:FindFirstChild(folderName)
-        if folder then
-            for _, base in ipairs(folder:GetChildren()) do
-                if base:IsA("BasePart") or base:IsA("Model") then
-                    if base:FindFirstChild("Owner") and (base.Owner.Value == player.UserId or base.Owner.Value == player.Name) then
-                        return base
-                    elseif base.Name:find(player.Name) or base.Name:find(tostring(player.UserId)) then
-                        return base
-                    end
-                end
-            end
+-- Monitorar mudanças em propriedades de um Brainrot
+local function monitorProperties(brainrot)
+    logMessage("Monitorando propriedades do Brainrot: " .. brainrot.Name)
+    brainrot.Changed:Connect(function(property)
+        logMessage("Propriedade alterada em " .. brainrot.Name .. ": " .. property .. " = " .. tostring(brainrot[property]))
+    end)
+    -- Monitorar valores específicos (ex.: StringValue, BoolValue)
+    for _, child in pairs(brainrot:GetChildren()) do
+        if child:IsA("ValueBase") then
+            child.Changed:Connect(function(value)
+                logMessage("Valor alterado em " .. brainrot.Name .. "." .. child.Name .. ": " .. tostring(value))
+            end)
         end
-    end
-    for _, base in ipairs(Workspace:GetDescendants()) do
-        if base:IsA("BasePart") or base:IsA("Model") then
-            if base.Name:find("Base") or base.Name:find("Plot") or base.Name:find(player.Name) or base.Name:find(tostring(player.UserId)) then
-                if base:FindFirstChild("Owner") and (base.Owner.Value == player.UserId or base.Owner.Value == player.Name) then
-                    return base
-                elseif base.Name:find(player.Name) or base.Name:find(tostring(player.UserId)) then
-                    return base
-                end
-            end
-        end
-    end
-    return nil
-end
-
--- Função para verificar se o jogador está segurando um Brainrot
-local function isHoldingBrainrot()
-    local char = player.Character
-    if char then
-        for _, obj in ipairs(char:GetChildren()) do
-            if obj:IsA("Model") and (obj.Name:find("Brainrot") or obj.Name:find("BrainRot")) then
-                return true
-            end
-        end
-    end
-    return false
-end
-
--- Função para interagir com DeliveryHitbox ou TouchInterest e teleportar
-local function fireTouch()
-    local char = player.Character or player.CharacterAdded:Wait()
-    local toucher = char:FindFirstChild("HumanoidRootPart")
-    if not toucher then
-        StatusLabel.Text = "No HumanoidRootPart found"
-        return
-    end
-
-    if not isHoldingBrainrot() then
-        StatusLabel.Text = "You are not holding a Brainrot"
-        return
-    end
-
-    local playerBase = findPlayerBase()
-    if not playerBase then
-        StatusLabel.Text = "Could not find your base. Ensure you have a base."
-        return
-    end
-
-    -- Contagem regressiva
-    for i = 1, 19 do
-        local timeLeft = math.floor((1.9 - (i - 1) * 0.1) * 10) / 10
-        StatusLabel.Text = "Working " .. tostring(timeLeft) .. "s"
-        wait(0.1)
-    end
-
-    local touched = 0
-    -- Tentar DeliveryHitbox
-    for i = 1, 2 do
-        for _, obj in ipairs(Workspace:GetDescendants()) do
-            if obj:IsA("BasePart") and obj.Name == "DeliveryHitbox" then
-                pcall(function()
-                    firetouchinterest(toucher, obj, 0) -- Toca
-                    task.wait(0.13)
-                    firetouchinterest(toucher, obj, 1) -- Solta
-                    touched += 1
-                end)
-            end
-        end
-    end
-
-    -- Tentar TouchInterest se DeliveryHitbox falhar
-    if touched == 0 then
-        for i = 1, 8 do
-            for _, obj in ipairs(Workspace:GetDescendants()) do
-                if obj:IsA("TouchTransmitter") and obj.Name == "TouchInterest" then
-                    pcall(function()
-                        firetouchinterest(toucher, obj.Parent, 0) -- Toca a parte associada
-                        task.wait(0.13)
-                        firetouchinterest(toucher, obj.Parent, 1) -- Solta
-                        touched += 1
-                    end)
-                end
-            end
-        end
-    end
-
-    -- Teleportar para a base do jogador
-    if touched > 0 then
-        local basePosition
-        if playerBase:IsA("BasePart") then
-            basePosition = playerBase.Position + Vector3.new(0, 5, 0)
-        elseif playerBase:IsA("Model") then
-            basePosition = playerBase:GetPivot().Position + Vector3.new(0, 5, 0)
-        end
-        toucher.CFrame = CFrame.new(basePosition)
-        StatusLabel.Text = "Success: Touched " .. touched .. " hitboxes! Teleported to base"
-    else
-        StatusLabel.Text = "No DeliveryHitbox or TouchInterest found"
     end
 end
 
--- Verificar associação ao grupo
-local isInGroup = player:IsInGroup(groupId)
-if isInGroup then
-    StatusLabel.Text = "Ready"
-    StealButton.BackgroundColor3 = Color3.fromRGB(30, 200, 100) -- Verde quando ativado
-    StealButton.MouseButton1Click:Connect(fireTouch)
-else
-    StatusLabel.Text = "Join group (ID: " .. groupId .. ") to unlock Steal!"
-    StealButton.Text = "Locked"
+-- Iniciar monitoramento
+logMessage("Iniciando script de log para Steal a Brainrot")
+monitorRemotes()
+monitorWorkspace()
+
+-- Monitorar Brainrots já existentes no Workspace
+for _, child in pairs(Workspace:GetChildren()) do
+    for _, name in pairs(brainrotNames) do
+        if child.Name == name then
+            logMessage("Brainrot encontrado no início: " .. child.Name)
+            monitorProperties(child)
+        end
+    end
 end
 
--- Notificação inicial
-local filename = "already_notified.txt"
-if not isfile(filename) then
-    game.StarterGui:SetCore("SendNotification", {
-        Title = "Welcome!",
-        Text = "Follow " .. username .. " and join group (ID: " .. groupId .. ") to unlock Steal! Don't use Steal during countdown.",
-        Duration = 65
-    })
-    writefile(filename, "true")
-end
+logMessage("Script de log ativo. Realize ações no jogo para capturar eventos.")
