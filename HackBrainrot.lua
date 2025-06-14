@@ -12,6 +12,17 @@ local function logMessage(message)
     print(string.format("[LOG %s]: %s", time, message))
 end
 
+-- Função para formatar argumentos de forma segura
+local function formatArgs(args)
+    local formatted = {}
+    for i, v in ipairs(args) do
+        if type(v) ~= "function" then -- Ignora funções para evitar erros
+            formatted[i] = tostring(v)
+        end
+    end
+    return table.concat(formatted, ", ") or "Nenhum"
+end
+
 -- Monitorar RemoteEvents e RemoteFunctions em ReplicatedStorage
 local function monitorRemotes()
     logMessage("Monitorando RemoteEvents e RemoteFunctions em ReplicatedStorage")
@@ -20,8 +31,7 @@ local function monitorRemotes()
             logMessage("Encontrado RemoteEvent: " .. remote:GetFullName())
             remote.OnClientEvent:Connect(function(...)
                 local args = {...}
-                local argString = table.concat(table.pack(...), ", ", function(v) return tostring(v) end)
-                logMessage("OnClientEvent em " .. remote:GetFullName() .. " | Args: " .. (argString or "Nenhum"))
+                logMessage("OnClientEvent em " .. remote:GetFullName() .. " | Args: " .. formatArgs(args))
             end)
         elseif remote:IsA("RemoteFunction") then
             logMessage("Encontrado RemoteFunction: " .. remote:GetFullName())
@@ -76,7 +86,7 @@ end
 local function monitorGUIs()
     logMessage("Monitorando GUIs em CoreGui e PlayerGui")
     local function hookGui(gui)
-        if gui:IsA("GuiButton") then
+        if gui:IsA("GuiButton") or gui:IsA("TextButton") then -- Inclui TextButton para ProximityPrompts
             logMessage("Encontrado botão GUI: " .. gui:GetFullName())
             gui.MouseButton1Click:Connect(function()
                 logMessage("Botão clicado: " .. gui:GetFullName())
