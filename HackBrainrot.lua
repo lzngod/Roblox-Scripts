@@ -5,6 +5,7 @@ local userId = 6027385792
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
 
 -- Esperar até o jogador estar completamente carregado
 if not player:IsDescendantOf(Players) then
@@ -152,12 +153,31 @@ CloseButton.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
--- Função para interagir com DeliveryHitbox
+-- Função para encontrar a base do jogador
+local function findPlayerBase()
+    for _, base in ipairs(Workspace:GetDescendants()) do
+        if base:IsA("BasePart") and base.Name:match("Base") and base:FindFirstChild("Owner") then
+            if base.Owner.Value == player.UserId then
+                return base
+            end
+        end
+    end
+    return nil
+end
+
+-- Função para interagir com DeliveryHitbox e teleportar para a base
 local function fireTouch()
     local char = player.Character or player.CharacterAdded:Wait()
     local toucher = char:FindFirstChild("HumanoidRootPart")
     if not toucher then
         StatusLabel.Text = "No HumanoidRootPart found"
+        return
+    end
+
+    -- Encontrar a base do jogador
+    local playerBase = findPlayerBase()
+    if not playerBase then
+        StatusLabel.Text = "Could not find your base"
         return
     end
 
@@ -170,7 +190,7 @@ local function fireTouch()
 
     local touched = 0
     for i = 1, 2 do
-        for _, obj in ipairs(workspace:GetDescendants()) do
+        for _, obj in ipairs(Workspace:GetDescendants()) do
             if obj:IsA("BasePart") and obj.Name == "DeliveryHitbox" then
                 firetouchinterest(toucher, obj, 0) -- Toca
                 wait(0.13)
@@ -180,7 +200,14 @@ local function fireTouch()
         end
     end
 
-    StatusLabel.Text = touched > 0 and "Success: Touched " .. touched .. " hitboxes!" or "No DeliveryHitbox found"
+    -- Teleportar para a base do jogador
+    if touched > 0 then
+        local basePosition = playerBase.Position + Vector3.new(0, 5, 0) -- Ajuste para cima da base
+        toucher.CFrame = CFrame.new(basePosition)
+        StatusLabel.Text = "Success: Touched " .. touched .. " hitboxes! Teleported to base"
+    else
+        StatusLabel.Text = "No DeliveryHitbox found"
+    end
 end
 
 -- Verificar associação ao grupo
