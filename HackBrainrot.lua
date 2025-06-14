@@ -14,7 +14,7 @@ end
 
 -- Criar GUI principal
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "StealBrainrotGUI"
+ScreenGui.Name = "CombinedGUI"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.ResetOnSpawn = false
@@ -23,18 +23,13 @@ ScreenGui.ResetOnSpawn = false
 local Frame = Instance.new("Frame")
 Frame.Parent = ScreenGui
 Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Frame.Position = UDim2.new(0, 50, 0, 50)
-Frame.Size = UDim2.new(0, 360, 0, 220)
+Frame.Position = UDim2.new(0, 20, 0, 100)
+Frame.Size = UDim2.new(0, 360, 0, 200)
 Frame.Active = true
 Frame.Draggable = true
 local UICorner_Frame = Instance.new("UICorner")
-UICorner_Frame.CornerRadius = UDim.new(0, 8)
+UICorner_Frame.CornerRadius = UDim.new(0, 10)
 UICorner_Frame.Parent = Frame
-local UIStroke = Instance.new("UIStroke")
-UIStroke.Thickness = 1
-UIStroke.Color = Color3.fromRGB(255, 255, 255)
-UIStroke.Transparency = 0.2
-UIStroke.Parent = Frame
 
 -- Título
 local TitleLabel = Instance.new("TextLabel")
@@ -73,7 +68,7 @@ UsernameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 UsernameLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- Botão Copy Username
-local CopyBurgundyButton = Instance.new("TextButton")
+local CopyButton = Instance.new("TextButton")
 CopyButton.Parent = Frame
 CopyButton.BackgroundColor3 = Color3.fromRGB(0, 145, 255)
 CopyButton.Position = UDim2.new(0, 110, 0, 80)
@@ -86,33 +81,19 @@ local UICorner_Copy = Instance.new("UICorner")
 UICorner_Copy.CornerRadius = UDim.new(0, 8)
 UICorner_Copy.Parent = CopyButton
 
--- Botão Start
-local StartButton = Instance.new("TextButton")
-StartButton.Parent = Frame
-StartButton.BackgroundColor3 = Color3.fromRGB(17, 144, 210)
-StartButton.Position = UDim2.new(0, 110, 0, 120)
-StartButton.Size = UDim2.new(0, 110, 0, 30)
-StartButton.Font = Enum.Font.GothamBold
-StartButton.Text = "Start Steal"
-StartButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-StartButton.TextSize = 15
-local UICorner_Start = Instance.new("UICorner")
-UICorner_Start.CornerRadius = UDim.new(0, 6)
-UICorner_Start.Parent = StartButton
-
--- Botão Stop
-local StopButton = Instance.new("TextButton")
-StopButton.Parent = Frame
-StopButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
-StopButton.Position = UDim2.new(0, 230, 0, 120)
-StopButton.Size = UDim2.new(0, 110, 0, 30)
-StopButton.Font = Enum.Font.GothamBold
-StopButton.Text = "Stop"
-StopButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-StopButton.TextSize = 15
-local UICorner_Stop = Instance.new("UICorner")
-UICorner_Stop.CornerRadius = UDim.new(0, 6)
-UICorner_Stop.Parent = StopButton
+-- Botão Steal (inicialmente desativado)
+local StealButton = Instance.new("TextButton")
+StealButton.Parent = Frame
+StealButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- Cinza quando desativado
+StealButton.Position = UDim2.new(0, 110, 0, 120)
+StealButton.Size = UDim2.new(0, 230, 0, 30)
+StealButton.Font = Enum.Font.GothamBold
+StealButton.Text = "Click Steal"
+StealButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+StealButton.TextSize = 15
+local UICorner_Steal = Instance.new("UICorner")
+UICorner_Steal.CornerRadius = UDim.new(0, 8)
+UICorner_Steal.Parent = StealButton
 
 -- Label de status
 local StatusLabel = Instance.new("TextLabel")
@@ -152,13 +133,8 @@ local function hoverEffect(btn, normalColor, hoverColor)
     end)
 end
 hoverEffect(CopyButton, Color3.fromRGB(0, 145, 255), Color3.fromRGB(0, 120, 220))
-hoverEffect(StartButton, Color3.fromRGB(17, 144, 210), Color3.fromRGB(0, 120, 180))
-hoverEffect(StopButton, Color3.fromRGB(200, 60, 60), Color3.fromRGB(180, 40, 40))
+hoverEffect(StealButton, Color3.fromRGB(30, 200, 100), Color3.fromRGB(25, 180, 90))
 hoverEffect(CloseButton, Color3.fromRGB(200, 50, 50), Color3.fromRGB(180, 30, 30))
-
--- Variáveis de controle
-local isRunning = false
-local stopRequested = false
 
 -- Função para copiar username
 CopyButton.MouseButton1Click:Connect(function()
@@ -166,7 +142,7 @@ CopyButton.MouseButton1Click:Connect(function()
         setclipboard(username)
         StatusLabel.Text = "✅ Username Copied!"
         wait(1.5)
-        StatusLabel.Text = isRunning and "Processing..." or "Ready"
+        StatusLabel.Text = "Ready"
     else
         StatusLabel.Text = "❌ Clipboard Error"
     end
@@ -174,8 +150,6 @@ end)
 
 -- Fechar GUI
 CloseButton.MouseButton1Click:Connect(function()
-    isRunning = false
-    stopRequested = true
     ScreenGui:Destroy()
 end)
 
@@ -187,7 +161,7 @@ local function findPlayerBase()
         if folder then
             for _, base in ipairs(folder:GetChildren()) do
                 if base:IsA("BasePart") or base:IsA("Model") then
-                    if base:FindFirstChild("Owner") and base.Owner.Value == player.UserId then
+                    if base:FindFirstChild("Owner") and (base.Owner.Value == player.UserId or base.Owner.Value == player.Name) then
                         return base
                     elseif base.Name:find(player.Name) or base.Name:find(tostring(player.UserId)) then
                         return base
@@ -199,7 +173,7 @@ local function findPlayerBase()
     for _, base in ipairs(Workspace:GetDescendants()) do
         if base:IsA("BasePart") or base:IsA("Model") then
             if base.Name:find("Base") or base.Name:find("Plot") or base.Name:find(player.Name) or base.Name:find(tostring(player.UserId)) then
-                if base:FindFirstChild("Owner") and base.Owner.Value == player.UserId then
+                if base:FindFirstChild("Owner") and (base.Owner.Value == player.UserId or base.Owner.Value == player.Name) then
                     return base
                 elseif base.Name:find(player.Name) or base.Name:find(tostring(player.UserId)) then
                     return base
@@ -223,131 +197,88 @@ local function isHoldingBrainrot()
     return false
 end
 
--- Função principal de automação
-local function startSteal()
-    if isRunning then return end
-    isRunning = true
-    stopRequested = false
-    StartButton.Text = "Processing"
-    StartButton.BackgroundTransparency = 0.5
-    StartButton.AutoButtonColor = false
-    StartButton.Active = false
-    StopButton.Active = true
-
+-- Função para interagir com DeliveryHitbox ou TouchInterest
+local function fireTouch()
     local char = player.Character or player.CharacterAdded:Wait()
     local toucher = char:FindFirstChild("HumanoidRootPart")
     if not toucher then
         StatusLabel.Text = "No HumanoidRootPart found"
-        isRunning = false
-        StartButton.Text = "Start Steal"
-        StartButton.BackgroundTransparency = 0
-        StartButton.AutoButtonColor = true
-        StartButton.Active = true
         return
     end
 
     if not isHoldingBrainrot() then
         StatusLabel.Text = "You are not holding a Brainrot"
-        isRunning = false
-        StartButton.Text = "Start Steal"
-        StartButton.BackgroundTransparency = 0
-        StartButton.AutoButtonColor = true
-        StartButton.Active = true
         return
     end
 
     local playerBase = findPlayerBase()
     if not playerBase then
         StatusLabel.Text = "Could not find your base. Ensure you have a base."
-        isRunning = false
-        StartButton.Text = "Start Steal"
-        StartButton.BackgroundTransparency = 0
-        StartButton.AutoButtonColor = true
-        StartButton.Active = true
         return
     end
 
-    while isRunning and not stopRequested do
-        for i = 1, 20 do
-            if stopRequested then
-                StatusLabel.Text = "Stopped"
-                break
-            end
-            local timeLeft = math.floor((2 - (i - 1) * 0.1) * 100) / 100
-            StatusLabel.Text = "Processing " .. tostring(timeLeft) .. "s"
-            task.wait(0.1)
-        end
-
-        if not stopRequested then
-            local touched = 0
-            for i = 1, 8 do
-                if stopRequested then
-                    StatusLabel.Text = "Stopped"
-                    break
-                end
-                for _, obj in ipairs(Workspace:GetDescendants()) do
-                    if obj:IsA("TouchTransmitter") and obj.Name == "TouchInterest" then
-                        pcall(function()
-                            firetouchinterest(toucher, obj.Parent, 0) -- Toca a parte associada
-                            task.wait(0.13)
-                            firetouchinterest(toucher, obj.Parent, 1) -- Solta
-                            touched += 1
-                        end)
-                    end
-                end
-            end
-
-            if touched > 0 then
-                local basePosition
-                if playerBase:IsA("BasePart") then
-                    basePosition = playerBase.Position + Vector3.new(0, 5, 0)
-                elseif playerBase:IsA("Model") then
-                    basePosition = playerBase:GetPivot().Position + Vector3.new(0, 5, 0)
-                end
-                toucher.CFrame = CFrame.new(basePosition)
-                StatusLabel.Text = "Success: Touched " .. touched .. " hitboxes! Teleported to base"
-            else
-                StatusLabel.Text = "No TouchInterest found"
-            end
-        end
-
-        task.wait(0.5) -- Pequeno delay para evitar spam
+    -- Contagem regressiva
+    for i = 1, 20 do
+        local timeLeft = math.floor((2 - (i - 1) * 0.1) * 100) / 100
+        StatusLabel.Text = "Processing " .. tostring(timeLeft) .. "s"
+        task.wait(0.1)
     end
 
-    isRunning = false
-    StartButton.Text = "Start Steal"
-    StartButton.BackgroundTransparency = 0
-    StartButton.AutoButtonColor = true
-    StartButton.Active = true
-end
+    local touched = 0
+    -- Tentar DeliveryHitbox
+    for i = 1, 2 do
+        for _, obj in ipairs(Workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and obj.Name == "DeliveryHitbox" then
+                pcall(function()
+                    firetouchinterest(toucher, obj, 0) -- Toca
+                    task.wait(0.13)
+                    firetouchinterest(toucher, obj, 1) -- Solta
+                    touched += 1
+                end)
+            end
+        end
+    end
 
--- Bot君子
+    -- Tentar TouchInterest
+    if touched == 0 then
+        for i = 1, 8 do
+            for _, obj in ipairs(Workspace:GetDescendants()) do
+                if obj:IsA("TouchTransmitter") and obj.Name == "TouchInterest" then
+                    pcall(function()
+                        firetouchinterest(toucher, obj.Parent, 0) -- Toca a parte associada
+                        task.wait(0.13)
+                        firetouchinterest(toucher, obj.Parent, 1) -- Solta
+                        touched += 1
+                    end)
+                end
+            end
+        end
+    end
 
--- Conectar botões
-StartButton.MouseButton1Click:Connect(startSteal)
-StopButton.MouseButton1Click:Connect(function()
-    if isRunning then
-        stopRequested = true
-        StatusLabel.Text = "Stopped"
-        StartButton.Text = "Start Steal"
-        StartButton.BackgroundTransparency = 0
-        StartButton.AutoButtonColor = true
-        StartButton.Active = true
+    -- Teleportar para a base do jogador
+    if touched > 0 then
+        local basePosition
+        if playerBase:IsA("BasePart") then
+            basePosition = playerBase.Position + Vector3.new(0, 5, 0)
+        elseif playerBase:IsA("Model") then
+            basePosition = playerBase:GetPivot().Position + Vector3.new(0, 5, 0)
+        end
+        toucher.CFrame = CFrame.new(basePosition)
+        StatusLabel.Text = "Success: Touched " .. touched .. " hitboxes! Teleported to base"
     else
-        StatusLabel.Text = "Not Running"
+        StatusLabel.Text = "No DeliveryHitbox or TouchInterest found"
     end
-end)
+end
 
 -- Verificar associação ao grupo
 local isInGroup = player:IsInGroup(groupId)
 if isInGroup then
     StatusLabel.Text = "Ready"
-    StartButton.BackgroundColor3 = Color3.fromRGB(17, 144, 210)
-    StartButton.MouseButton1Click:Connect(startSteal)
+    StealButton.BackgroundColor3 = Color3.fromRGB(30, 200, 100) -- Verde quando ativado
+    StealButton.MouseButton1Click:Connect(fireTouch)
 else
     StatusLabel.Text = "Join group (ID: " .. groupId .. ") to unlock Steal!"
-    StartButton.Text = "Locked"
-    StartButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    StealButton.Text = "Locked"
 end
 
 -- Notificação inicial
