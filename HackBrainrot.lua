@@ -31,14 +31,19 @@ local UICorner_Frame = Instance.new("UICorner")
 UICorner_Frame.CornerRadius = UDim.new(0, 10)
 UICorner_Frame.Parent = Frame
 
+-- Layout para organizar os elementos
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = Frame
+UIListLayout.Padding = UDim.new(0, 5)
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
 -- Título
 local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Parent = Frame
 TitleLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 TitleLabel.BackgroundTransparency = 0.25
-TitleLabel.Position = UDim2.new(0.5, 0, 0, 10)
 TitleLabel.Size = UDim2.new(0, 340, 0, 30)
-TitleLabel.AnchorPoint = Vector2.new(0.5, 0)
 TitleLabel.Text = "Follow me and join my group to unlock Steal!"
 TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.TextSize = 18
@@ -51,7 +56,6 @@ UICorner_Title.Parent = TitleLabel
 local Avatar = Instance.new("ImageLabel")
 Avatar.Parent = Frame
 Avatar.Size = UDim2.new(0, 80, 0, 80)
-Avatar.Position = UDim2.new(0, 15, 0, 50)
 Avatar.BackgroundTransparency = 1
 Avatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId="..userId.."&width=100&height=100&format=png"
 
@@ -59,7 +63,6 @@ Avatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId="..userId
 local UsernameLabel = Instance.new("TextLabel")
 UsernameLabel.Parent = Frame
 UsernameLabel.Size = UDim2.new(0, 230, 0, 25)
-UsernameLabel.Position = UDim2.new(0, 110, 0, 50)
 UsernameLabel.BackgroundTransparency = 1
 UsernameLabel.Text = "Username: " .. username
 UsernameLabel.Font = Enum.Font.GothamSemibold
@@ -71,7 +74,6 @@ UsernameLabel.TextXAlignment = Enum.TextXAlignment.Left
 local CopyButton = Instance.new("TextButton")
 CopyButton.Parent = Frame
 CopyButton.BackgroundColor3 = Color3.fromRGB(0, 145, 255)
-CopyButton.Position = UDim2.new(0, 110, 0, 80)
 CopyButton.Size = UDim2.new(0, 230, 0, 30)
 CopyButton.Font = Enum.Font.GothamBold
 CopyButton.Text = "Copy Username"
@@ -85,7 +87,6 @@ UICorner_Copy.Parent = CopyButton
 local StealButton = Instance.new("TextButton")
 StealButton.Parent = Frame
 StealButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- Cinza quando desativado
-StealButton.Position = UDim2.new(0, 110, 0, 120)
 StealButton.Size = UDim2.new(0, 230, 0, 30)
 StealButton.Font = Enum.Font.GothamBold
 StealButton.Text = "Click Steal"
@@ -99,7 +100,6 @@ UICorner_Steal.Parent = StealButton
 local StatusLabel = Instance.new("TextLabel")
 StatusLabel.Parent = Frame
 StatusLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-StatusLabel.Position = UDim2.new(0, 10, 0, 160)
 StatusLabel.Size = UDim2.new(0, 340, 0, 30)
 StatusLabel.Font = Enum.Font.GothamBold
 StatusLabel.Text = "Checking group status..."
@@ -113,7 +113,6 @@ UICorner_Status.Parent = StatusLabel
 local CloseButton = Instance.new("TextButton")
 CloseButton.Parent = Frame
 CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-CloseButton.Position = UDim2.new(1, -30, 0, 5)
 CloseButton.Size = UDim2.new(0, 25, 0, 25)
 CloseButton.Text = "X"
 CloseButton.Font = Enum.Font.GothamBold
@@ -122,6 +121,25 @@ CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 local UICorner_Close = Instance.new("UICorner")
 UICorner_Close.CornerRadius = UDim.new(0, 6)
 UICorner_Close.Parent = CloseButton
+
+-- Posicionamento dinâmico com UIListLayout
+local function updateLayout()
+    local padding = 5
+    local yOffset = 10 -- Início do título
+    TitleLabel.Position = UDim2.new(0.5, 0, 0, yOffset)
+    yOffset = yOffset + 40 -- Título + padding
+    Avatar.Position = UDim2.new(0, 15, 0, yOffset)
+    UsernameLabel.Position = UDim2.new(0, 110, 0, yOffset + 30)
+    yOffset = yOffset + 90 -- Avatar + padding
+    CopyButton.Position = UDim2.new(0, 65, 0, yOffset)
+    yOffset = yOffset + 40 -- Botão Copy + padding
+    StealButton.Position = UDim2.new(0, 65, 0, yOffset)
+    yOffset = yOffset + 40 -- Botão Steal + padding
+    StatusLabel.Position = UDim2.new(0, 10, 0, yOffset)
+    yOffset = yOffset + 40 -- Status + padding
+    CloseButton.Position = UDim2.new(1, -30, 0, 5)
+end
+updateLayout()
 
 -- Efeitos de hover
 local function hoverEffect(btn, normalColor, hoverColor)
@@ -197,7 +215,7 @@ local function isHoldingBrainrot()
     return false
 end
 
--- Função para interagir com DeliveryHitbox ou TouchInterest
+-- Função para interagir com DeliveryHitbox ou TouchInterest e teleportar
 local function fireTouch()
     local char = player.Character or player.CharacterAdded:Wait()
     local toucher = char:FindFirstChild("HumanoidRootPart")
@@ -218,10 +236,10 @@ local function fireTouch()
     end
 
     -- Contagem regressiva
-    for i = 1, 20 do
-        local timeLeft = math.floor((2 - (i - 1) * 0.1) * 100) / 100
-        StatusLabel.Text = "Processing " .. tostring(timeLeft) .. "s"
-        task.wait(0.1)
+    for i = 1, 19 do
+        local timeLeft = math.floor((1.9 - (i - 1) * 0.1) * 10) / 10
+        StatusLabel.Text = "Working " .. tostring(timeLeft) .. "s"
+        wait(0.1)
     end
 
     local touched = 0
@@ -239,7 +257,7 @@ local function fireTouch()
         end
     end
 
-    -- Tentar TouchInterest
+    -- Tentar TouchInterest se DeliveryHitbox falhar
     if touched == 0 then
         for i = 1, 8 do
             for _, obj in ipairs(Workspace:GetDescendants()) do
