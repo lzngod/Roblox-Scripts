@@ -1,88 +1,91 @@
--- Script de Log Otimizado para Ações do Jogador em Roblox
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
-local CoreGui = game:GetService("CoreGui")
 local player = Players.LocalPlayer
+local isActive = false
 
-local function logMessage(message)
-    local time = os.date("%H:%M:%S")
-    print(string.format("[LOG %s]: %s", time, message))
-end
-
-local function formatArgs(args)
-    local formatted = {}
-    for i, v in ipairs(args) do
-        if type(v) ~= "function" then
-            formatted[i] = tostring(v)
-        end
-    end
-    return table.concat(formatted, ", ") or "Nenhum"
-end
-
-local function monitorRemotes()
-    logMessage("Monitorando RemoteEvents em ReplicatedStorage")
-    for _, remote in pairs(ReplicatedStorage:GetDescendants()) do
-        if remote:IsA("RemoteEvent") then
-            logMessage("Encontrado RemoteEvent: " .. remote:GetFullName())
-            remote.OnClientEvent:Connect(function(...)
-                local args = {...}
-                logMessage("OnClientEvent em " .. remote:GetFullName() .. " | Args: " .. formatArgs(args))
-            end)
-        end
-    end
-end
-
-local function monitorPlayerActions()
-    logMessage("Monitorando ações do jogador")
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if not gameProcessed and input.UserInputType == Enum.UserInputType.MouseButton1 then
-            local target = player:GetMouse().Target
-            if target then
-                logMessage("Clique em: " .. target:GetFullName() .. " | Classe: " .. target.ClassName)
-            end
+-- Função pra criar o botão "Anti-Damage"
+local function createAntiDamageButton()
+    local screenGui = Instance.new("ScreenGui")
+    local button = Instance.new("TextButton")
+    
+    screenGui.Parent = player:WaitForChild("PlayerGui")
+    button.Parent = screenGui
+    button.Size = UDim2.new(0, 120, 0, 50)
+    button.Position = UDim2.new(0.5, -60, 0.9, -25)
+    button.Text = "Anti-Damage: Off"
+    button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    
+    button.MouseButton1Click:Connect(function()
+        isActive = not isActive
+        button.Text = "Anti-Damage: " .. (isActive and "On" or "Off")
+        button.BackgroundColor3 = isActive and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        if isActive then
+            print("Proteção Anti-Damage ativada")
+        else
+            print("Proteção Anti-Damage desativada")
         end
     end)
+    
+    return button
+end
 
-    if player.Character then
-        local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
-        if humanoidRootPart then
-            humanoidRootPart.Touched:Connect(function(part)
-                if part and part.Name:find("Claim_Hitbox") then
-                    logMessage("Tocou Claim_Hitbox: " .. part:GetFullName() .. " | Classe: " .. part.ClassName)
+-- Função pra bloquear eventos de combate
+local function blockCombatEvents()
+    local blockedEvents = {
+        "ReplicatedStorage.Packages.Net.RE/CombatService/ApplyImpulse",
+        "ReplicatedStorage.Packages.Net.RE/BoogieBomb/Throw",
+        "ReplicatedStorage.Packages.Net.RE/CombatService" -- Gênero pra cobrir variações
+    }
+
+    for _, eventPath in pairs(blockedEvents) do
+        local event = ReplicatedStorage:FindFirstChild(eventPath, true)
+        if event and event:IsA("RemoteEvent") then
+            local oldOnClientEvent = event.OnClientEvent
+            event.OnClientEvent:Connect(function(...)
+                if isActive then
+                    print("Evento de combate bloqueado: " .. eventPath)
+                    return -- Bloqueia a execução do evento
+                else
+                    oldOnClientEvent(...) -- Permite se desativado
                 end
             end)
         end
     end
-    player.CharacterAdded:Connect(function(character)
-        local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-        humanoidRootPart.Touched:Connect(function(part)
-            if part and part.Name:find("Claim_Hitbox") then
-                logMessage("Tocou Claim_Hitbox: " .. part:GetFullName() .. " | Classe: " .. part.ClassName)
+
+    -- Bloquear danos ou knockback no personagem
+    if player.Character then
+        local humanoid = player.Character:FindFirstChild("Humanoid")
+        if humanoid then
+            local oldTakeDamage = humanoid.TakeDamage
+            humanoid.TakeDamage = function(self, damage)
+                if isActive then
+                    print("Dano bloqueado: " .. tostring(damage))
+                    return 0 -- Retorna 0 dano
+                else
+                    return oldTakeDamage(self, damage)
+                end
             end
-        end)
+        end
+    end
+    player.CharacterAdded:Connect(function(character)
+        local humanoid = character:WaitForChild("Humanoid")
+        local oldTakeDamage = humanoid.TakeDamage
+        humanoid.TakeDamage = function(self, damage)
+            if isActive then
+                print("Dano bloqueado: " .. tostring(damage))
+                return 0
+            else
+                return oldTakeDamage(self, damage)
+            end
+        end
     end)
 end
 
-local function monitorGUIs()
-    logMessage("Monitorando GUIs")
-    local function hookGui(gui)
-        if gui:IsA("GuiButton") or gui:IsA("TextButton") then
-            logMessage("Botão GUI: " .. gui:GetFullName())
-            gui.MouseButton1Click:Connect(function()
-                logMessage("Clicou em: " .. gui:GetFullName())
-            end)
-        end
-    end
-    for _, gui in pairs(player:WaitForChild("PlayerGui"):GetDescendants()) do
-        hookGui(gui)
-    end
-    player.PlayerGui.DescendantAdded:Connect(hookGui)
-end
-
-logMessage("Script de log iniciado")
-pcall(monitorRemotes)
-pcall(monitorPlayerActions)
-pcall(monitorGUIs)
-logMessage("Realize ações para capturar logs")
+-- Iniciar o script
+print("Script Anti-Damage iniciado")
+local button = createAntiDamageButton()
+blockCombatEvents()
+print("Clique em Anti-Damage para ativar/desativar a proteção")
