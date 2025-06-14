@@ -4,8 +4,8 @@ local username = "FaDhenGaming"
 local userId = 6027385792
 
 local Players = game:GetService("Players")
-local player = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
+local player = Players.LocalPlayer
 
 -- Esperar até o jogador estar completamente carregado
 if not player:IsDescendantOf(Players) then
@@ -129,7 +129,7 @@ local function hoverEffect(btn, normalColor, hoverColor)
         btn.BackgroundColor3 = hoverColor
     end)
     btn.MouseLeave:Connect(function()
-        btn.BackgroundColor3 = normalColor
+        btn.BackgroundColor3 = normal orada
     end)
 end
 hoverEffect(CopyButton, Color3.fromRGB(0, 145, 255), Color3.fromRGB(0, 120, 220))
@@ -155,14 +155,51 @@ end)
 
 -- Função para encontrar a base do jogador
 local function findPlayerBase()
-    for _, base in ipairs(Workspace:GetDescendants()) do
-        if base:IsA("BasePart") and base.Name:match("Base") and base:FindFirstChild("Owner") then
-            if base.Owner.Value == player.UserId then
-                return base
+    -- Procurar em pastas comuns como "Plots" ou "Bases"
+    local possibleFolders = {"Plots", "Bases", "PlayerBases"}
+    for _, folderName in ipairs(possibleFolders) do
+        local folder = Workspace:FindFirstChild(folderName)
+        if folder then
+            for _, base in ipairs(folder:GetChildren()) do
+                -- Verificar por Owner ou nome do jogador
+                if base:IsA("BasePart") or base:IsA("Model") then
+                    if base:FindFirstChild("Owner") and base.Owner.Value == player.UserId then
+                        return base
+                    elseif base.Name:find(player.Name) or base.Name:find(tostring(player.UserId)) then
+                        return base
+                    end
+                end
             end
         end
     end
+
+    -- Procurar diretamente no workspace
+    for _, base in ipairs(Workspace:GetDescendants()) do
+        if base:IsA("BasePart") or base:IsA("Model") then
+            if base.Name:find("Base") or base.Name:find("Plot") or base.Name:find(player.Name) or base.Name:find(tostring(player.UserId)) then
+                if base:FindFirstChild("Owner") and base.Owner.Value == player.UserId then
+                    return base
+                elseif base.Name:find(player.Name) or base.Name:find(tostring(player.UserId)) then
+                    return base
+                end
+            end
+        end
+    end
+
     return nil
+end
+
+-- Função para verificar se o jogador está segurando um Brainrot
+local function isHoldingBrainrot()
+    local char = player.Character
+    if char then
+        for _, obj in ipairs(char:GetChildren()) do
+            if obj:IsA("Model") and obj.Name:find("Brainrot") then
+                return true
+            end
+        end
+    end
+    return false
 end
 
 -- Função para interagir com DeliveryHitbox e teleportar para a base
@@ -174,10 +211,16 @@ local function fireTouch()
         return
     end
 
+    -- Verificar se está segurando um Brainrot
+    if not isHoldingBrainrot() then
+        StatusLabel.Text = "You are not holding a Brainrot"
+        return
+    end
+
     -- Encontrar a base do jogador
     local playerBase = findPlayerBase()
     if not playerBase then
-        StatusLabel.Text = "Could not find your base"
+        StatusLabel.Text = "Could not find your base. Ensure you have a base in the game."
         return
     end
 
@@ -202,7 +245,12 @@ local function fireTouch()
 
     -- Teleportar para a base do jogador
     if touched > 0 then
-        local basePosition = playerBase.Position + Vector3.new(0, 5, 0) -- Ajuste para cima da base
+        local basePosition
+        if playerBase:IsA("BasePart") then
+            basePosition = playerBase.Position + Vector3.new(0, 5, 0)
+        elseif playerBase:IsA("Model") then
+            basePosition = playerBase:GetPivot().Position + Vector3.new(0, 5, 0)
+        end
         toucher.CFrame = CFrame.new(basePosition)
         StatusLabel.Text = "Success: Touched " .. touched .. " hitboxes! Teleported to base"
     else
