@@ -1,4 +1,4 @@
--- Script de Log Universal para Roblox
+-- Script de Log Universal Corrigido para Roblox
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -15,73 +15,60 @@ end
 -- Monitorar RemoteEvents e RemoteFunctions em ReplicatedStorage
 local function monitorRemotes()
     logMessage("Monitorando RemoteEvents e RemoteFunctions em ReplicatedStorage")
-    local function hookRemote(remote)
+    for _, remote in pairs(ReplicatedStorage:GetDescendants()) do
         if remote:IsA("RemoteEvent") then
             logMessage("Encontrado RemoteEvent: " .. remote:GetFullName())
-            -- Hook para FireServer
-            local oldFireServer
-            oldFireServer = hookfunction(remote.FireServer, function(self, ...)
-                local args = {...}
-                local argString = table.concat(table.pack(...), ", ", function(v) return tostring(v) end)
-                logMessage("FireServer em " .. remote:GetFullName() .. " | Args: " .. (argString or "Nenhum"))
-                return oldFireServer(self, ...)
-            end)
-            -- Monitorar OnClientEvent (se aplicável)
-            remote.OnClientEvent:Connect(function(...)
+            -- Monitorar disparos do cliente (se possível)
+            local connection
+            connection = remote.OnClientEvent:Connect(function(...)
                 local args = {...}
                 local argString = table.concat(table.pack(...), ", ", function(v) return tostring(v) end)
                 logMessage("OnClientEvent em " .. remote:GetFullName() .. " | Args: " .. (argString or "Nenhum"))
             end)
+            if not connection then
+                logMessage("Falha ao conectar OnClientEvent para: " .. remote:GetFullName())
+            end
         elseif remote:IsA("RemoteFunction") then
             logMessage("Encontrado RemoteFunction: " .. remote:GetFullName())
-            -- Hook para InvokeServer
-            local oldInvokeServer
-            oldInvokeServer = hookfunction(remote.InvokeServer, function(self, ...)
-                local args = {...}
-                local argString = table.concat(table.pack(...), ", ", function(v) return tostring(v) end)
-                logMessage("InvokeServer em " .. remote:GetFullName() .. " | Args: " .. (argString or "Nenhum"))
-                return oldInvokeServer(self, ...)
-            end)
         end
     end
-
-    -- Monitorar remotes existentes
-    for _, remote in pairs(ReplicatedStorage:GetDescendants()) do
-        hookRemote(remote)
-    end
-    -- Monitorar novos remotes
     ReplicatedStorage.DescendantAdded:Connect(function(descendant)
-        hookRemote(descendant)
+        if descendant:IsA("RemoteEvent") or descendant:IsA("RemoteFunction") then
+            logMessage("Novo Remote detectado: " .. descendant:GetFullName())
+        end
     end)
 end
 
--- Monitorar mudanças no Workspace (ex.: Brainrots criados/removidos)
+-- Monitorar mudanças no Workspace
 local function monitorWorkspace()
     logMessage("Monitorando mudanças no Workspace")
     Workspace.DescendantAdded:Connect(function(instance)
         logMessage("Nova instância criada: " .. instance:GetFullName() .. " | Classe: " .. instance.ClassName)
-        -- Monitorar propriedades
         instance.Changed:Connect(function(property)
-            logMessage("Propriedade alterada em " .. instance:GetFullName() .. ": " .. property .. " = " .. tostring(instance[property]))
+            if instance and instance[property] ~= nil then
+                logMessage("Propriedade alterada em " .. instance:GetFullName() .. ": " .. property .. " = " .. tostring(instance[property]))
+            end
         end)
-        -- Monitorar valores (ex.: StringValue, BoolValue)
         for _, child in pairs(instance:GetDescendants()) do
             if child:IsA("ValueBase") then
                 child.Changed:Connect(function(value)
-                    logMessage("Valor alterado em " .. child:GetFullName() .. ": " .. tostring(value))
+                    if child and value ~= nil then
+                        logMessage("Valor alterado em " .. child:GetFullName() .. ": " .. tostring(value))
+                    end
                 end)
             end
-        end)
+        end
     end)
     Workspace.DescendantRemoving:Connect(function(instance)
-        logMessage("Instância removida: " .. instance:GetFullName() .. " | Classe: " .. instance.ClassName)
+        if instance then
+            logMessage("Instância removida: " .. instance:GetFullName() .. " | Classe: " .. instance.ClassName)
+        end
     end)
 end
 
--- Monitorar interações do jogador (ex.: cliques, teclas)
+-- Monitorar interações do jogador
 local function monitorPlayerActions()
     logMessage("Monitorando ações do jogador")
-    -- Capturar cliques do mouse
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if not gameProcessed then
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -97,25 +84,27 @@ local function monitorPlayerActions()
         end
     end)
 
-    -- Monitorar colisões do personagem
     if player.Character then
         local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
         if humanoidRootPart then
             humanoidRootPart.Touched:Connect(function(part)
-                logMessage("Personagem tocou: " .. part:GetFullName() .. " | Classe: " .. part.ClassName)
+                if part then
+                    logMessage("Personagem tocou: " .. part:GetFullName() .. " | Classe: " .. part.ClassName)
+                end
             end)
         end
     end
-    -- Monitorar novos personagens
     player.CharacterAdded:Connect(function(character)
         local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
         humanoidRootPart.Touched:Connect(function(part)
-            logMessage("Personagem tocou: " .. part:GetFullName() .. " | Classe: " .. part.ClassName)
+            if part then
+                logMessage("Personagem tocou: " .. part:GetFullName() .. " | Classe: " .. part.ClassName)
+            end
         end)
     end)
 end
 
--- Monitorar GUIs (ex.: botões clicados)
+-- Monitorar GUIs
 local function monitorGUIs()
     logMessage("Monitorando GUIs em CoreGui e PlayerGui")
     local function hookGui(gui)
@@ -127,23 +116,21 @@ local function monitorGUIs()
         end
     end
 
-    -- Monitorar GUIs existentes
     for _, gui in pairs(CoreGui:GetDescendants()) do
         hookGui(gui)
     end
     for _, gui in pairs(player:WaitForChild("PlayerGui"):GetDescendants()) do
         hookGui(gui)
     end
-    -- Monitorar novas GUIs
     CoreGui.DescendantAdded:Connect(hookGui)
     player.PlayerGui.DescendantAdded:Connect(hookGui)
 end
 
 -- Iniciar monitoramento
 logMessage("Script de log universal iniciado")
-monitorRemotes()
-monitorWorkspace()
-monitorPlayerActions()
-monitorGUIs()
+pcall(monitorRemotes) -- Usa pcall para evitar crashes
+pcall(monitorWorkspace)
+pcall(monitorPlayerActions)
+pcall(monitorGUIs)
 
 logMessage("Pronto! Realize ações no jogo para capturar logs.")
