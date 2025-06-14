@@ -37,7 +37,8 @@ local function blockCombatEvents()
     local blockedEvents = {
         "ReplicatedStorage.Packages.Net.RE/CombatService/ApplyImpulse",
         "ReplicatedStorage.Packages.Net.RE/BoogieBomb/Throw",
-        "ReplicatedStorage.Packages.Net.RE/CombatService" -- Gênero pra cobrir variações
+        "ReplicatedStorage.Packages.Net.RE/CombatService",
+        "ReplicatedStorage.Packages.Ragdoll.Ragdoll" -- Adicionado pra cobrir ragdoll
     }
 
     for _, eventPath in pairs(blockedEvents) do
@@ -54,33 +55,83 @@ local function blockCombatEvents()
             end)
         end
     end
+end
 
-    -- Bloquear danos ou knockback no personagem
+-- Função pra proteger a física e o Brainrot
+local function protectPhysicsAndBrainrot()
     if player.Character then
         local humanoid = player.Character:FindFirstChild("Humanoid")
-        if humanoid then
-            local oldTakeDamage = humanoid.TakeDamage
-            humanoid.TakeDamage = function(self, damage)
+        local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+        if humanoid and humanoidRootPart then
+            -- Congelar posição pra impedir knockback
+            local originalPosition = humanoidRootPart.Position
+            humanoidRootPart.Changed:Connect(function(property)
+                if isActive and property == "Position" and humanoidRootPart.Position ~= originalPosition then
+                    humanoidRootPart.Position = originalPosition
+                    print("Knockback bloqueado, posição restaurada")
+                end
+            end)
+
+            -- Desativar ragdoll
+            humanoid.BreakJointsOnDeath = false -- Impede ragdoll permanente
+            humanoid.Changed:Connect(function(property)
+                if isActive and property == "PlatformStand" and humanoid.PlatformStand then
+                    humanoid.PlatformStand = false
+                    print("Ragdoll bloqueado")
+                end
+            end)
+
+            -- Manter o Brainrot na mão (assumindo que é um Tool)
+            local function keepBrainrot()
                 if isActive then
-                    print("Dano bloqueado: " .. tostring(damage))
-                    return 0 -- Retorna 0 dano
-                else
-                    return oldTakeDamage(self, damage)
+                    local backpack = player:FindFirstChild("Backpack")
+                    local character = player.Character
+                    if backpack and character then
+                        local brainrot = backpack:FindFirstChild("Brainrot") or character:FindFirstChild("Brainrot")
+                        if brainrot and brainrot:IsA("Tool") then
+                            if not character:FindFirstChild("Brainrot") then
+                                brainrot.Parent = character
+                                print("Brainrot mantido na mão")
+                            end
+                        end
+                    end
                 end
             end
+            game:GetService("RunService").Heartbeat:Connect(keepBrainrot)
         end
     end
     player.CharacterAdded:Connect(function(character)
         local humanoid = character:WaitForChild("Humanoid")
-        local oldTakeDamage = humanoid.TakeDamage
-        humanoid.TakeDamage = function(self, damage)
+        local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+        local originalPosition = humanoidRootPart.Position
+        humanoidRootPart.Changed:Connect(function(property)
+            if isActive and property == "Position" and humanoidRootPart.Position ~= originalPosition then
+                humanoidRootPart.Position = originalPosition
+                print("Knockback bloqueado, posição restaurada")
+            end
+        end)
+        humanoid.Changed:Connect(function(property)
+            if isActive and property == "PlatformStand" and humanoid.PlatformStand then
+                humanoid.PlatformStand = false
+                print("Ragdoll bloqueado")
+            end
+        end)
+        local function keepBrainrot()
             if isActive then
-                print("Dano bloqueado: " .. tostring(damage))
-                return 0
-            else
-                return oldTakeDamage(self, damage)
+                local backpack = player:FindFirstChild("Backpack")
+                local character = player.Character
+                if backpack and character then
+                    local brainrot = backpack:FindFirstChild("Brainrot") or character:FindFirstChild("Brainrot")
+                    if brainrot and brainrot:IsA("Tool") then
+                        if not character:FindFirstChild("Brainrot") then
+                            brainrot.Parent = character
+                            print("Brainrot mantido na mão")
+                        end
+                    end
+                end
             end
         end
+        game:GetService("RunService").Heartbeat:Connect(keepBrainrot)
     end)
 end
 
@@ -88,4 +139,5 @@ end
 print("Script Anti-Damage iniciado")
 local button = createAntiDamageButton()
 blockCombatEvents()
+protectPhysicsAndBrainrot()
 print("Clique em Anti-Damage para ativar/desativar a proteção")
