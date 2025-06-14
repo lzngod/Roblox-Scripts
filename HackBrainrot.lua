@@ -2,6 +2,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local isActive = false
 
@@ -38,7 +39,7 @@ local function blockCombatEvents()
         "ReplicatedStorage.Packages.Net.RE/CombatService/ApplyImpulse",
         "ReplicatedStorage.Packages.Net.RE/BoogieBomb/Throw",
         "ReplicatedStorage.Packages.Net.RE/CombatService",
-        "ReplicatedStorage.Packages.Ragdoll.Ragdoll" -- Adicionado pra cobrir ragdoll
+        "ReplicatedStorage.Packages.Ragdoll.Ragdoll"
     }
 
     for _, eventPath in pairs(blockedEvents) do
@@ -59,79 +60,82 @@ end
 
 -- Função pra proteger a física e o Brainrot
 local function protectPhysicsAndBrainrot()
-    if player.Character then
-        local humanoid = player.Character:FindFirstChild("Humanoid")
-        local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
-        if humanoid and humanoidRootPart then
-            -- Congelar posição pra impedir knockback
-            local originalPosition = humanoidRootPart.Position
-            humanoidRootPart.Changed:Connect(function(property)
-                if isActive and property == "Position" and humanoidRootPart.Position ~= originalPosition then
-                    humanoidRootPart.Position = originalPosition
-                    print("Knockback bloqueado, posição restaurada")
-                end
-            end)
+    local character = player.Character
+    if not character then return end
+    
+    local humanoid = character:FindFirstChild("Humanoid")
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not (humanoid and humanoidRootPart) then return end
 
-            -- Desativar ragdoll
-            humanoid.BreakJointsOnDeath = false -- Impede ragdoll permanente
-            humanoid.Changed:Connect(function(property)
-                if isActive and property == "PlatformStand" and humanoid.PlatformStand then
-                    humanoid.PlatformStand = false
-                    print("Ragdoll bloqueado")
-                end
-            end)
+    local originalPosition = humanoidRootPart.Position
+    local originalOrientation = humanoidRootPart.Orientation
 
-            -- Manter o Brainrot na mão (assumindo que é um Tool)
-            local function keepBrainrot()
-                if isActive then
-                    local backpack = player:FindFirstChild("Backpack")
-                    local character = player.Character
-                    if backpack and character then
-                        local brainrot = backpack:FindFirstChild("Brainrot") or character:FindFirstChild("Brainrot")
-                        if brainrot and brainrot:IsA("Tool") then
-                            if not character:FindFirstChild("Brainrot") then
-                                brainrot.Parent = character
-                                print("Brainrot mantido na mão")
-                            end
-                        end
-                    end
-                end
+    -- Congelar física com Anchored temporariamente
+    local function freezePhysics()
+        if isActive and humanoidRootPart then
+            humanoidRootPart.Anchored = true
+            wait(0.1) -- Tempo mínimo pra bloquear movimento
+            humanoidRootPart.Anchored = false
+            if humanoidRootPart.Position ~= originalPosition then
+                humanoidRootPart.Position = originalPosition
+                humanoidRootPart.Orientation = originalOrientation
+                print("Knockback bloqueado, posição e orientação restauradas")
             end
-            game:GetService("RunService").Heartbeat:Connect(keepBrainrot)
         end
     end
-    player.CharacterAdded:Connect(function(character)
-        local humanoid = character:WaitForChild("Humanoid")
-        local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-        local originalPosition = humanoidRootPart.Position
-        humanoidRootPart.Changed:Connect(function(property)
-            if isActive and property == "Position" and humanoidRootPart.Position ~= originalPosition then
-                humanoidRootPart.Position = originalPosition
-                print("Knockback bloqueado, posição restaurada")
-            end
-        end)
-        humanoid.Changed:Connect(function(property)
-            if isActive and property == "PlatformStand" and humanoid.PlatformStand then
+
+    -- Bloquear estados de Humanoid
+    humanoid.Changed:Connect(function(property)
+        if isActive then
+            if property == "PlatformStand" and humanoid.PlatformStand then
                 humanoid.PlatformStand = false
                 print("Ragdoll bloqueado")
+            elseif property == "Sit" and humanoid.Sit then
+                humanoid.Sit = false
+                print("Sentar bloqueado")
             end
-        end)
-        local function keepBrainrot()
-            if isActive then
-                local backpack = player:FindFirstChild("Backpack")
-                local character = player.Character
-                if backpack and character then
-                    local brainrot = backpack:FindFirstChild("Brainrot") or character:FindFirstChild("Brainrot")
-                    if brainrot and brainrot:IsA("Tool") then
-                        if not character:FindFirstChild("Brainrot") then
-                            brainrot.Parent = character
-                            print("Brainrot mantido na mão")
-                        end
+        end
+    end)
+
+    -- Manter o Brainrot na mão
+    local function keepBrainrot()
+        if isActive then
+            local backpack = player:FindFirstChild("Backpack")
+            local character = player.Character
+            if backpack and character then
+                local brainrot = backpack:FindFirstChild("Brainrot") or character:FindFirstChild("Brainrot")
+                if brainrot and brainrot:IsA("Tool") then
+                    if not character:FindFirstChild("Brainrot") then
+                        brainrot.Parent = character
+                        print("Brainrot mantido na mão")
                     end
                 end
             end
         end
-        game:GetService("RunService").Heartbeat:Connect(keepBrainrot)
+    end
+
+    -- Monitorar e corrigir a cada frame
+    RunService.Heartbeat:Connect(function()
+        freezePhysics()
+        keepBrainrot()
+        -- Correção de bugs (teletransporte fora do mapa)
+        if isActive and humanoidRootPart then
+            local x, y, z = humanoidRootPart.Position.X, humanoidRootPart.Position.Y, humanoidRootPart.Position.Z
+            if y < -50 or math.abs(x) > 500 or math.abs(z) > 500 then -- Limites aproximados do mapa
+                humanoidRootPart.Position = originalPosition
+                humanoidRootPart.Orientation = originalOrientation
+                print("Teletransporte fora do mapa corrigido")
+            end
+        end
+    end)
+
+    -- Reiniciar proteção ao trocar de personagem
+    player.CharacterAdded:Connect(function(newCharacter)
+        character = newCharacter
+        humanoid = character:WaitForChild("Humanoid")
+        humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+        originalPosition = humanoidRootPart.Position
+        originalOrientation = humanoidRootPart.Orientation
     end)
 end
 
