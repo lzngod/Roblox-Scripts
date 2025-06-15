@@ -24,7 +24,6 @@ end)
 -- Função para clonar objetos recursivamente, ignorando objetos não clonáveis
 local function cloneMap(parent, destination)
     for _, child in ipairs(parent:GetChildren()) do
-        -- Ignorar objetos que não podem ser clonados (ex.: CurrentCamera, TouchInterest, Terrain)
         local isClonable = true
         if child == Workspace.CurrentCamera or child.Name == "TouchInterest" or child == Workspace.Terrain then
             isClonable = false
@@ -35,7 +34,7 @@ local function cloneMap(parent, destination)
             end)
             if success and clone then
                 clone.Parent = destination
-                cloneMap(child, clone) -- Clonar filhos recursivamente
+                cloneMap(child, clone)
             else
                 warn("Falha ao clonar: " .. tostring(child) .. " - Ignorado.")
             end
@@ -45,7 +44,6 @@ end
 
 -- Função para salvar o mapa como JSON
 local function saveMapToFile()
-    -- Criar uma pasta temporária para armazenar o mapa
     local mapCopyFolder = Instance.new("Folder")
     mapCopyFolder.Name = "CopiedMap"
     
@@ -62,23 +60,28 @@ local function saveMapToFile()
         return
     end
     
-    -- Caminho para salvar o arquivo (pasta Downloads)
-    local filePath = os.getenv("USERPROFILE") .. "\\Downloads\\CopiedMap.json"
-    
-    -- Tentar salvar o arquivo usando writefile
-    success, errorMsg = pcall(function()
-        writefile(filePath, mapData)
-    end)
-    
-    if success then
-        print("Mapa salvo com sucesso em: " .. filePath)
-        print("Nota: O arquivo é JSON. Converta manualmente para .rbxm no Roblox Studio.")
+    -- Verificar se writefile está disponível
+    if writefile then
+        local filePath = os.getenv("USERPROFILE") .. "\\Downloads\\CopiedMap.json"
+        success, errorMsg = pcall(function()
+            writefile(filePath, mapData)
+        end)
+        if success then
+            print("Mapa salvo com sucesso em: " .. filePath)
+            print("Nota: O arquivo é JSON. Converta manualmente para .rbxm no Roblox Studio.")
+        else
+            warn("Erro ao salvar mapa: " .. tostring(errorMsg))
+        end
     else
-        warn("Erro ao salvar mapa: " .. tostring(errorMsg))
-        warn("Certifique-se de usar um executor que suporte writefile.")
+        warn("Função writefile não disponível. Use um executor compatível (ex.: Synapse X, Krnl).")
+        -- Opcional: Exibir mensagem na tela
+        local message = Instance.new("Hint")
+        message.Text = "Erro: Executor não suporta salvamento. Contate o suporte!"
+        message.Parent = game:GetService("CoreGui")
+        wait(5)
+        message:Destroy()
     end
     
-    -- Limpar a pasta temporária
     mapCopyFolder:Destroy()
 end
 
