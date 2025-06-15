@@ -1,13 +1,35 @@
--- Script para copiar um mapa completo do Workspace e salvar como JSON
+-- LocalScript para criar um botão e copiar o mapa
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 local Workspace = game:GetService("Workspace")
-local ServerStorage = game:GetService("ServerStorage")
 local HttpService = game:GetService("HttpService")
+
+-- Criar a GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = playerGui
+screenGui.Name = "MapCopierGUI"
+
+-- Criar o botão
+local button = Instance.new("TextButton")
+button.Parent = screenGui
+button.Size = UDim2.new(0, 200, 0, 50)
+button.Position = UDim2.new(0.5, -100, 0.5, -25)
+button.Text = "Copiar Mapa"
+button.BackgroundColor3 = Color3.fromRGB(50, 150, 255)
+button.TextColor3 = Color3.fromRGB(255, 255, 255)
+button.MouseButton1Click:Connect(function()
+    copyMap()
+end)
 
 -- Função para clonar objetos recursivamente, ignorando objetos não clonáveis
 local function cloneMap(parent, destination)
     for _, child in ipairs(parent:GetChildren()) do
         -- Ignorar objetos que não podem ser clonados (ex.: CurrentCamera, TouchInterest, Terrain)
-        if child ~= Workspace.CurrentCamera and child.Name ~= "TouchInterest" and child ~= Workspace.Terrain then
+        local isClonable = true
+        if child == Workspace.CurrentCamera or child.Name == "TouchInterest" or child == Workspace.Terrain then
+            isClonable = false
+        end
+        if isClonable then
             local success, clone = pcall(function()
                 return child:Clone()
             end)
@@ -21,7 +43,7 @@ local function cloneMap(parent, destination)
     end
 end
 
--- Função para serializar o mapa como JSON
+-- Função para salvar o mapa como JSON
 local function saveMapToFile()
     -- Criar uma pasta temporária para armazenar o mapa
     local mapCopyFolder = Instance.new("Folder")
@@ -31,13 +53,20 @@ local function saveMapToFile()
     cloneMap(Workspace, mapCopyFolder)
     
     -- Serializar os dados do mapa
-    local mapData = HttpService:JSONEncode(mapCopyFolder:GetDescendants())
+    local mapData
+    local success, errorMsg = pcall(function()
+        mapData = HttpService:JSONEncode(mapCopyFolder:GetDescendants())
+    end)
+    if not success then
+        warn("Erro ao serializar mapa: " .. tostring(errorMsg))
+        return
+    end
     
     -- Caminho para salvar o arquivo (pasta Downloads)
     local filePath = os.getenv("USERPROFILE") .. "\\Downloads\\CopiedMap.json"
     
-    -- Salvar como JSON usando writefile (compatível com executores)
-    local success, errorMsg = pcall(function()
+    -- Tentar salvar o arquivo usando writefile
+    success, errorMsg = pcall(function()
         writefile(filePath, mapData)
     end)
     
@@ -46,11 +75,14 @@ local function saveMapToFile()
         print("Nota: O arquivo é JSON. Converta manualmente para .rbxm no Roblox Studio.")
     else
         warn("Erro ao salvar mapa: " .. tostring(errorMsg))
+        warn("Certifique-se de usar um executor que suporte writefile.")
     end
     
     -- Limpar a pasta temporária
     mapCopyFolder:Destroy()
 end
 
--- Executar a função de salvamento
-saveMapToFile()
+-- Função principal para copiar o mapa
+local function copyMap()
+    saveMapToFile()
+end
