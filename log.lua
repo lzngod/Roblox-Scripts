@@ -1,91 +1,88 @@
--- LocalScript para criar um botão e copiar o mapa
-local player = game.Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+-- Script de Log Otimizado para Ações do Jogador em Roblox
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
-local HttpService = game:GetService("HttpService")
+local CoreGui = game:GetService("CoreGui")
+local player = Players.LocalPlayer
 
--- Criar a GUI
-local screenGui = Instance.new("ScreenGui")
-screenGui.Parent = playerGui
-screenGui.Name = "MapCopierGUI"
+local function logMessage(message)
+    local time = os.date("%H:%M:%S")
+    print(string.format("[LOG %s]: %s", time, message))
+end
 
--- Criar o botão
-local button = Instance.new("TextButton")
-button.Parent = screenGui
-button.Size = UDim2.new(0, 200, 0, 50)
-button.Position = UDim2.new(0.5, -100, 0.5, -25)
-button.Text = "Copiar Mapa"
-button.BackgroundColor3 = Color3.fromRGB(50, 150, 255)
-button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.MouseButton1Click:Connect(function()
-    copyMap()
-end)
-
--- Função para clonar objetos recursivamente, ignorando objetos não clonáveis
-local function cloneMap(parent, destination)
-    for _, child in ipairs(parent:GetChildren()) do
-        local isClonable = true
-        if child == Workspace.CurrentCamera or child.Name == "TouchInterest" or child == Workspace.Terrain then
-            isClonable = false
+local function formatArgs(args)
+    local formatted = {}
+    for i, v in ipairs(args) do
+        if type(v) ~= "function" then
+            formatted[i] = tostring(v)
         end
-        if isClonable then
-            local success, clone = pcall(function()
-                return child:Clone()
+    end
+    return table.concat(formatted, ", ") or "Nenhum"
+end
+
+local function monitorRemotes()
+    logMessage("Monitorando RemoteEvents em ReplicatedStorage")
+    for _, remote in pairs(ReplicatedStorage:GetDescendants()) do
+        if remote:IsA("RemoteEvent") then
+            logMessage("Encontrado RemoteEvent: " .. remote:GetFullName())
+            remote.OnClientEvent:Connect(function(...)
+                local args = {...}
+                logMessage("OnClientEvent em " .. remote:GetFullName() .. " | Args: " .. formatArgs(args))
             end)
-            if success and clone then
-                clone.Parent = destination
-                cloneMap(child, clone)
-            else
-                warn("Falha ao clonar: " .. tostring(child) .. " - Ignorado.")
+        end
+    end
+end
+
+local function monitorPlayerActions()
+    logMessage("Monitorando ações do jogador")
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.UserInputType == Enum.UserInputType.MouseButton1 then
+            local target = player:GetMouse().Target
+            if target then
+                logMessage("Clique em: " .. target:GetFullName() .. " | Classe: " .. target.ClassName)
             end
         end
-    end
-end
-
--- Função para salvar o mapa como JSON
-local function saveMapToFile()
-    local mapCopyFolder = Instance.new("Folder")
-    mapCopyFolder.Name = "CopiedMap"
-    
-    -- Copiar objetos do Workspace
-    cloneMap(Workspace, mapCopyFolder)
-    
-    -- Serializar os dados do mapa
-    local mapData
-    local success, errorMsg = pcall(function()
-        mapData = HttpService:JSONEncode(mapCopyFolder:GetDescendants())
     end)
-    if not success then
-        warn("Erro ao serializar mapa: " .. tostring(errorMsg))
-        return
-    end
-    
-    -- Verificar se writefile está disponível
-    if writefile then
-        local filePath = os.getenv("USERPROFILE") .. "\\Downloads\\CopiedMap.json"
-        success, errorMsg = pcall(function()
-            writefile(filePath, mapData)
-        end)
-        if success then
-            print("Mapa salvo com sucesso em: " .. filePath)
-            print("Nota: O arquivo é JSON. Converta manualmente para .rbxm no Roblox Studio.")
-        else
-            warn("Erro ao salvar mapa: " .. tostring(errorMsg))
+
+    if player.Character then
+        local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+        if humanoidRootPart then
+            humanoidRootPart.Touched:Connect(function(part)
+                if part and part.Name:find("Claim_Hitbox") then
+                    logMessage("Tocou Claim_Hitbox: " .. part:GetFullName() .. " | Classe: " .. part.ClassName)
+                end
+            end)
         end
-    else
-        warn("Função writefile não disponível. Use um executor compatível (ex.: Synapse X, Krnl).")
-        -- Opcional: Exibir mensagem na tela
-        local message = Instance.new("Hint")
-        message.Text = "Erro: Executor não suporta salvamento. Contate o suporte!"
-        message.Parent = game:GetService("CoreGui")
-        wait(5)
-        message:Destroy()
     end
-    
-    mapCopyFolder:Destroy()
+    player.CharacterAdded:Connect(function(character)
+        local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+        humanoidRootPart.Touched:Connect(function(part)
+            if part and part.Name:find("Claim_Hitbox") then
+                logMessage("Tocou Claim_Hitbox: " .. part:GetFullName() .. " | Classe: " .. part.ClassName)
+            end
+        end)
+    end)
 end
 
--- Função principal para copiar o mapa
-local function copyMap()
-    saveMapToFile()
+local function monitorGUIs()
+    logMessage("Monitorando GUIs")
+    local function hookGui(gui)
+        if gui:IsA("GuiButton") or gui:IsA("TextButton") then
+            logMessage("Botão GUI: " .. gui:GetFullName())
+            gui.MouseButton1Click:Connect(function()
+                logMessage("Clicou em: " .. gui:GetFullName())
+            end)
+        end
+    end
+    for _, gui in pairs(player:WaitForChild("PlayerGui"):GetDescendants()) do
+        hookGui(gui)
+    end
+    player.PlayerGui.DescendantAdded:Connect(hookGui)
 end
+
+logMessage("Script de log iniciado")
+pcall(monitorRemotes)
+pcall(monitorPlayerActions)
+pcall(monitorGUIs)
+logMessage("Realize ações para capturar logs")
