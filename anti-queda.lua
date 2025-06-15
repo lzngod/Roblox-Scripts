@@ -8,7 +8,7 @@ local isInvincible = false
 
 local targets = {
     Impulse = {
-        Path = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Net"):WaitForChild("RE"):WaitForChild("CombatService"),
+        Path = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Net"):WaitForChild("RE/CombatService"),
         Name = "ApplyImpulse"
     },
     Ragdoll = {
@@ -29,13 +29,13 @@ local function disableInvincibility()
     fakeEvents = {}
     
     for key, original in pairs(originalEvents) do
-        if original and not original.Parent then
+        if original and not original.Parent and targets[key] then
              original.Parent = targets[key].Path
         end
     end
     
     isInvincible = false
-    print("[Invincibility] Desativado. Vulnerabilidade restaurada.")
+    print("[Invencibility v4.1] Desativado. Vulnerabilidade restaurada.")
 end
 
 local function enableInvincibility()
@@ -55,9 +55,8 @@ local function enableInvincibility()
     end
     
     isInvincible = true
-    print("[Invincibility] Ativado. Você está protegido.")
+    print("[Invencibility v4.1] Ativado. Você está protegido.")
 end
-
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "InvincibilityGUI"
