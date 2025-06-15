@@ -1,13 +1,13 @@
--- Script para copiar um mapa completo do Workspace e salvar como .rbxm
+-- Script para copiar um mapa completo do Workspace e salvar como JSON
 local Workspace = game:GetService("Workspace")
 local ServerStorage = game:GetService("ServerStorage")
 local HttpService = game:GetService("HttpService")
 
--- Função para clonar objetos recursivamente
+-- Função para clonar objetos recursivamente, ignorando objetos não clonáveis
 local function cloneMap(parent, destination)
     for _, child in ipairs(parent:GetChildren()) do
-        -- Ignorar objetos que não devem ser clonados (ex.: CurrentCamera)
-        if child ~= Workspace.CurrentCamera then
+        -- Ignorar objetos que não podem ser clonados (ex.: CurrentCamera, TouchInterest, Terrain)
+        if child ~= Workspace.CurrentCamera and child.Name ~= "TouchInterest" and child ~= Workspace.Terrain then
             local success, clone = pcall(function()
                 return child:Clone()
             end)
@@ -15,27 +15,13 @@ local function cloneMap(parent, destination)
                 clone.Parent = destination
                 cloneMap(child, clone) -- Clonar filhos recursivamente
             else
-                warn("Falha ao clonar: " .. tostring(child))
+                warn("Falha ao clonar: " .. tostring(child) .. " - Ignorado.")
             end
         end
     end
 end
 
--- Função para exportar terreno (serializar como dados)
-local function exportTerrain()
-    local terrain = Workspace.Terrain
-    local terrainData = {}
-    
-    -- Capturar propriedades básicas do terreno
-    terrainData.Region = terrain.MaxExtents -- Extensão do terreno
-    -- Serializar materiais do terreno (exemplo simplificado)
-    terrainData.Materials = {}
-    -- Nota: Exportar terreno completo requer APIs específicas ou ferramentas externas
-    -- Aqui, capturamos apenas propriedades básicas
-    return terrainData
-end
-
--- Função para serializar o mapa em .rbxm
+-- Função para serializar o mapa como JSON
 local function saveMapToFile()
     -- Criar uma pasta temporária para armazenar o mapa
     local mapCopyFolder = Instance.new("Folder")
@@ -44,36 +30,20 @@ local function saveMapToFile()
     -- Copiar objetos do Workspace
     cloneMap(Workspace, mapCopyFolder)
     
-    -- Adicionar terreno (como objeto ou dados serializados)
-    local terrainData = exportTerrain()
-    local terrainFolder = Instance.new("Folder")
-    terrainFolder.Name = "TerrainData"
-    terrainFolder.Parent = mapCopyFolder
-    
-    -- Serializar terreno como StringValue (para referência)
-    local terrainValue = Instance.new("StringValue")
-    terrainValue.Name = "SerializedTerrain"
-    terrainValue.Value = HttpService:JSONEncode(terrainData)
-    terrainValue.Parent = terrainFolder
+    -- Serializar os dados do mapa
+    local mapData = HttpService:JSONEncode(mapCopyFolder:GetDescendants())
     
     -- Caminho para salvar o arquivo (pasta Downloads)
-    local filePath = os.getenv("USERPROFILE") .. "\\Downloads\\CopiedMap.rbxm"
+    local filePath = os.getenv("USERPROFILE") .. "\\Downloads\\CopiedMap.json"
     
-    -- Tentar usar a API do executor para salvar como .rbxm
+    -- Salvar como JSON usando writefile (compatível com executores)
     local success, errorMsg = pcall(function()
-        -- A função `saveinstance` é comum em executores como Synapse X
-        if saveinstance then
-            saveinstance({mapCopyFolder}, filePath)
-        else
-            warn("Função 'saveinstance' não disponível. Usando método alternativo.")
-            -- Alternativa: Serializar como JSON (menos ideal para .rbxm)
-            local serializedData = HttpService:JSONEncode(mapCopyFolder:GetDescendants())
-            writefile(filePath .. ".json", serializedData)
-        end
+        writefile(filePath, mapData)
     end)
     
     if success then
         print("Mapa salvo com sucesso em: " .. filePath)
+        print("Nota: O arquivo é JSON. Converta manualmente para .rbxm no Roblox Studio.")
     else
         warn("Erro ao salvar mapa: " .. tostring(errorMsg))
     end
