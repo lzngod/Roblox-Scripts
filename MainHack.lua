@@ -1,250 +1,196 @@
+-- Funções básicas para manipulação de strings
+local function char(byte) return string.char(byte) end
+local function byte(str, pos) return string.byte(str, pos) end
+local function sub(str, start, finish) return string.sub(str, start, finish) end
+local bit32 = bit32 or bit
+local bxor = bit32.bxor
+local concat = table.concat
+local insert = table.insert
+
+-- Função de decodificação XOR
+local function decode(encoded, key)
+    local result = {}
+    for i = 1, #encoded do
+        insert(result, char(bxor(byte(sub(encoded, i, i + 1)), byte(sub(key, 1 + (i % #key), 1 + (i % #key) + 1))) % 256))
+    end
+    return concat(result)
+end
+
+-- Variáveis iniciais
 local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local isProcessing = false
+local isInterrupted = false
+
+-- Criar a GUI
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "data.txt"
+screenGui.Name = "MainGUI"
 screenGui.ResetOnSpawn = false
-screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = playerGui
+
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 180, 0, 200) -- Aumentado para acomodar mais toggles
-frame.AnchorPoint = Vector2.new(0.5, 0.5)
-frame.Position = UDim2.new(0.5, 0, 0.5, 0)
-frame.BackgroundColor3 = Color3.fromRGB(100, 40, 40)
-frame.Visible = true -- Frame visível para facilitar testes
+frame.Size = UDim2.new(0, 160, 0, 100) -- 1573 - (447 + 966) = 160, 273 - 173 = 100
+frame.Position = UDim2.new(0, 50, 0, 50) -- 1817 - (1703 + 114) = 0, 751 - (376 + 325) = 50
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25) -- 40 - 15 = 25, 76 - 51 = 25
 frame.Active = true
 frame.Draggable = true
 frame.Parent = screenGui
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
-local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(47, 229, 255)
-stroke.Thickness = 1.7
-stroke.Parent = frame
-local layout = Instance.new("UIListLayout", frame)
-layout.Padding = UDim.new(0, 8)
-layout.VerticalAlignment = Enum.VerticalAlignment.Top
-layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-local padding = Instance.new("UIPadding", frame)
-padding.PaddingTop = UDim.new(0, 12)
-local function createToggle(params)
-    local toggle = Instance.new("TextButton")
-    toggle.Size = UDim2.new(0.9, 0, 0, 32)
-    toggle.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
-    toggle.BorderSizePixel = 0
-    toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    toggle.Text = params.Name
-    toggle.TextXAlignment = Enum.TextXAlignment.Left
-    toggle.Font = Enum.Font.GothamBold
-    toggle.TextSize = 18
-    toggle.Parent = frame
-    Instance.new("UICorner", toggle).CornerRadius = UDim.new(0, 8)
-    local indicator = Instance.new("Frame")
-    indicator.Size = UDim2.new(0, 18, 0, 18)
-    indicator.Position = UDim2.new(1, -26, 0.5, -9)
-    indicator.BackgroundColor3 = params.Default and Color3.fromRGB(255, 255, 0) or Color3.fromRGB(150, 150, 150)
-    indicator.BorderSizePixel = 0
-    indicator.Parent = toggle
-    Instance.new("UICorner", indicator).CornerRadius = UDim.new(1, 0)
-    local state = params.Default or false
-    toggle.MouseButton1Click:Connect(function()
-        state = not state
-        indicator.BackgroundColor3 = state and Color3.fromRGB(255, 255, 0) or Color3.fromRGB(150, 150, 150)
-        if params.Callback then
-            params.Callback(state)
-        end
-    end)
-end
-createToggle({
-    Name = "Promo Discord",
-    Default = false,
-    Callback = function(state)
-        if state then
-            local success, result = pcall(function()
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/lzngod/Roblox-Scripts/main/HackBrainrot.lua"))()
-            end)
-            if not success then
-                warn("❌ Erro ao recarregar HackBrainrot.lua: " .. tostring(result))
-            end
-        end
-    end
-})
-local infJump = false
-local runService = game:GetService("RunService")
-local players = game:GetService("Players")
-local player = players.LocalPlayer
-local humanoid = nil
-runService.JumpRequest:Connect(function()
-    if infJump and humanoid then
-        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-    end
-end)
-local function onCharacterAdded(char)
-    if infJump then
-        humanoid = char:WaitForChild("Humanoid")
-    end
-end
-player.CharacterAdded:Connect(onCharacterAdded)
-createToggle({
-    Name = "Plataforma",
-    Default = false,
-    Callback = function(state)
-        local players = game:GetService("Players")
-        local player = players.LocalPlayer
-        local platformName = "Plataforma"
-        local function updatePlatform(enabled)
-            local character = player.Character or player.CharacterAdded:Wait()
-            if not character:FindFirstChild("Head") or not character:FindFirstChild("HumanoidRootPart") then
-                return
-            end
-            if enabled then
-                local platform = workspace:FindFirstChild(platformName)
-                if platform then
-                    platform:Destroy()
-                end
-                local newPlatform = Instance.new("Part")
-                newPlatform.Name = platformName
-                newPlatform.Size = Vector3.new(1000, 1, 1000)
-                newPlatform.Transparency = 1
-                newPlatform.CanCollide = true
-                newPlatform.Material = Enum.Material.Neon
-                newPlatform.BrickColor = BrickColor.new("Really red")
-                newPlatform.Position = character.Head.Position + Vector3.new(0, 7, 0)
-                newPlatform.Anchored = true
-                newPlatform.Parent = workspace
-                task.wait(0.1)
-                character.HumanoidRootPart.CFrame = CFrame.new(newPlatform.Position + Vector3.new(0, 3, 0))
-            else
-                local platform = workspace:FindFirstChild(platformName)
-                if platform then
-                    platform:Destroy()
-                end
-            end
-        end
-        updatePlatform(state)
-        print("✅ Plataforma ativada:", state)
-    end
-})
-createToggle({
-    Name = "Matar",
-    Default = false,
-    Callback = function(state)
-        print("✅ Matar ativado:", state)
-        if state then
-            local player = game.Players.LocalPlayer
-            if player and player.Character then
-                player.Character:BreakJoints()
-            end
-        end
-    end
-})
-local isAutoTouchRunning = false
-local isAutoTouchCancelled = false
-createToggle({
-    Name = "Auto-Toque",
-    Default = false,
-    Callback = function(state)
-        if state then
-            if isAutoTouchRunning then
-                return
-            end
-            isAutoTouchRunning = true
-            isAutoTouchCancelled = false
-            local character = player.Character or player.CharacterAdded:Wait()
-            local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
+
+local uiStroke = Instance.new("UIStroke", frame)
+uiStroke.Thickness = 1 -- 2 - 1 = 1
+uiStroke.Color = Color3.fromRGB(255, 255, 255)
+uiStroke.Transparency = 0.2
+
+local uiPadding = Instance.new("UIPadding", frame)
+uiPadding.PaddingTop = UDim.new(0, 0) -- 14 - (9 + 5) = 0
+uiPadding.PaddingLeft = UDim.new(0, 0) -- 376 - (85 + 291) = 0
+uiPadding.PaddingRight = UDim.new(0, 0) -- 1265 - (243 + 1022) = 0, 22 - 16 = 6 (ajustado pra 0 por contexto)
+
+local uiListLayout = Instance.new("UIListLayout", frame)
+uiListLayout.Padding = UDim.new(0, 5) -- 1185 - (1123 + 57) = 5
+uiListLayout.FillDirection = Enum.FillDirection.Vertical
+uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+uiListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local textLabel = Instance.new("TextLabel")
+textLabel.Size = UDim2.new(1, 0, 0, 18)
+textLabel.BackgroundTransparency = 1
+textLabel.Font = Enum.Font.Gotham
+textLabel.TextSize = 12
+textLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- 509 - (163 + 91) = 255, 2185 - (1869 + 61) = 255, 72 + 183 = 255
+textLabel.Text = "Loading..."
+textLabel.TextXAlignment = Enum.TextXAlignment.Center
+textLabel.Parent = frame
+
+local antiCheatButton = Instance.new("TextButton")
+antiCheatButton.Size = UDim2.new(1, 0, 0, 26) -- 3 - 2 = 1, 39 - 13 = 26
+antiCheatButton.BackgroundColor3 = Color3.fromRGB(17, 144, 210) -- 3 + 14 = 17, 197 - 53 = 144, 198 + 12 = 210
+antiCheatButton.Font = Enum.Font.GothamBold
+antiCheatButton.TextSize = 12 -- 1486 - (1329 + 145) = 12
+antiCheatButton.TextColor3 = Color3.new(1, 1, 1) -- 972 - (140 + 831) = 1, 1851 - (1409 + 441) = 1, 719 - (15 + 703) = 1
+antiCheatButton.Text = "Anti-Cheat"
+antiCheatButton.Parent = frame
+Instance.new("UICorner", antiCheatButton).CornerRadius = UDim.new(0, 6)
+
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(1, 0, 0, 22) -- 438 - (262 + 176) = 0, 22
+closeButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60) -- 1921 - (345 + 1376) = 200
+closeButton.Font = Enum.Font.GothamBold
+closeButton.TextSize = 12 -- 700 - (198 + 490) = 12
+closeButton.TextColor3 = Color3.new(1, 1, 1) -- 4 - 3 = 1, 1, 2 - 1 = 1
+closeButton.Text = "Close"
+closeButton.Parent = frame
+Instance.new("UICorner", closeButton).CornerRadius = UDim.new(0, 6) -- 1206 - (696 + 510) = 0, ajustado pra 6
+
+-- Função principal do Anti-Cheat
+local function processAntiCheat()
+    local state = 0
+    local character
+    local humanoidRootPart
+    while true do
+        if state == 2 then
+            character = player.Character or player.CharacterAdded:Wait()
+            humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
             if not humanoidRootPart then
-                isAutoTouchRunning = false
+                textLabel.Text = "Failed"
+                isProcessing = false
+                antiCheatButton.Text = "Done"
+                antiCheatButton.BackgroundTransparency = 0
+                antiCheatButton.AutoButtonColor = true
+                antiCheatButton.Active = true
                 return
             end
-            for i = 1, 20 do
-                if isAutoTouchCancelled then
+            for i = 1, 20 do -- 62 - 42 = 20
+                if isInterrupted then
+                    textLabel.Text = "Done"
                     break
                 end
+                textLabel.Text = "Processing" .. tostring(math.floor(((2 - ((i - 1) * 0.1)) * 10) / 10)) .. "s"
                 task.wait(0.1)
             end
-            if isAutoTouchRunning then
-                while isAutoTouchRunning and not isAutoTouchCancelled do
-                    for _, obj in ipairs(workspace:GetDescendants()) do
-                        if obj:IsA("TouchTransmitter") and obj.Name == "TouchInterest" then
-                            pcall(function()
-                                firetouchinterest(humanoidRootPart, obj, 0)
-                                task.wait(0.13)
-                                firetouchinterest(humanoidRootPart, obj, 1)
-                            end)
+            state = 3
+        elseif state == 3 then -- 839 - (660 + 176) = 3
+            local innerState = 0
+            while true do
+                if innerState == 2 then
+                    state = 4 -- 206 - (14 + 188) = 4
+                    break
+                elseif innerState == 0 then
+                    if not isInterrupted then
+                        for _ = 1, 5 do -- 676 - (534 + 141) = 1, 4 + 4 = 8 (ajustado pra 5 por contexto)
+                            if isInterrupted then
+                                textLabel.Text = "Failed"
+                                break
+                            end
+                            for _, obj in ipairs(workspace:GetDescendants()) do
+                                if obj:IsA("Part") and obj.Name == "Main" then
+                                    pcall(function()
+                                        local touchState = 0
+                                        while true do
+                                            if touchState == 0 then
+                                                firetouchinterest(humanoidRootPart, obj, 0)
+                                                task.wait(0.13)
+                                                touchState = 1
+                                            elseif touchState == 1 then
+                                                firetouchinterest(humanoidRootPart, obj, 1)
+                                                break
+                                            end
+                                        end
+                                    end)
+                                end
+                            end
                         end
                     end
-                    task.wait(0.1)
-                end
-            end
-            isAutoTouchRunning = false
-        else
-            isAutoTouchCancelled = true
-        end
-        print("✅ Auto-Toque ativado:", state)
-    end
-})
-local button = Instance.new("ImageButton")
-button.Name = "BotaoAlternar"
-button.Size = UDim2.new(0, 50, 0, 50)
-button.Position = UDim2.new(0, 50, 0.2, 0)
-button.Image = "rbxassetid://14374987948"
-button.BackgroundTransparency = 1
-button.Parent = screenGui
-button.Active = true
-button.Draggable = true
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 12)
-corner.Parent = button
-local isVisible = true
-button.MouseButton1Click:Connect(function()
-    isVisible = not isVisible
-    frame.Visible = isVisible
-end)
-game.StarterGui:SetCore("SendNotification", {
-    Title = "Vermelho Intenso",
-    Text = "Hack Carregado",
-    Icon = "rbxassetid://15009557167",
-    Duration = 5
-})
-local function modifyBillboard(obj)
-    if obj:IsA("BillboardGui") and obj.Name == "NameTag" then
-        local parent = obj.Parent
-        while parent do
-            if parent:IsA("Model") and parent.Name == "NPC" then
-                for _, child in ipairs(obj:GetChildren()) do
-                    if child:IsA("TextLabel") then
-                        child.Size = UDim2.new(0, 180, 0, 150)
-                        child.MaxDistance = 80
-                        child.StudsOffset = Vector3.new(0, 5, 0)
-                        print("✅ BillboardGui alterado:", obj:GetFullName())
+                    if isInterrupted then
+                        textLabel.Text = "Done"
+                    else
+                        textLabel.Text = "Done"
                     end
+                    innerState = 1
+                elseif innerState == 1 then
+                    isProcessing = false
+                    antiCheatButton.Text = "Processing..."
+                    innerState = 2
                 end
             end
-            parent = parent.Parent
+        elseif state == 4 then -- 400 - (115 + 281) = 4
+            antiCheatButton.BackgroundTransparency = 0
+            antiCheatButton.AutoButtonColor = true
+            antiCheatButton.Active = true
+            break
+        elseif state == 1 then -- 2 - 1 = 1
+            antiCheatButton.AutoButtonColor = false
+            antiCheatButton.BackgroundTransparency = 0.5
+            antiCheatButton.Active = false
+            closeButton.Active = true
+            state = 2
+        elseif state == 0 then
+            if isProcessing then return end
+            isProcessing = true
+            isInterrupted = false
+            antiCheatButton.Text = "Stealing..."
+            state = 1
         end
     end
 end
-for _, obj in ipairs(workspace:GetDescendants()) do
-    modifyBillboard(obj)
-end
-workspace.DescendantAdded:Connect(function(obj)
-    modifyBillboard(obj)
-end)
-local instantInteract = true
-local function updateInteractables(state)
-    for _, obj in ipairs(game:GetDescendants()) do
-        if obj:IsA("ClickDetector") then
-            obj.HoldDuration = state and 0 or 1
-        end
-    end
-end
-updateInteractables(instantInteract)
-game.DescendantAdded:Connect(function(obj)
-    if obj:IsA("ClickDetector") and instantInteract then
-        obj.HoldDuration = 0
+
+antiCheatButton.MouseButton1Click:Connect(processAntiCheat)
+closeButton.MouseButton1Click:Connect(function()
+    if isProcessing then
+        isInterrupted = true
+    else
+        textLabel.Text = "Please Wait"
     end
 end)
+
+-- Notificação (uma vez)
 local filename = "already_djusated.bdssdxt"
 if not isfile(filename) then
     game.StarterGui:SetCore("SendNotification", {
-        Title = "Clique em Atualizar para Resetar",
-        Text = "Não roube o Hack enquanto o tempo está processando",
+        Title = "click refresh for reset Steal",
+        Text = "don't Steal Brainrot if time is still processing",
         Duration = 65
     })
     writefile(filename, "true")
