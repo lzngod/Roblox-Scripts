@@ -4,46 +4,20 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-local isInvincible = false
+local isInvincible = true
 
-local function findEvent(parent, eventName)
-    local found = parent:FindFirstChild(eventName)
-    if found and found:IsA("RemoteEvent") then
-        return found
-    end
+local targets = {
+    Impulse = {
+        Path = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Net"),
+        Name = "RE/CombatService/ApplyImpulse"
+    },
+    Ragdoll = {
+        Path = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Ragdoll"),
+        Name = "Ragdoll"
+    }
+}
 
-    for _, child in ipairs(parent:GetChildren()) do
-        if #child:GetChildren() > 0 then
-            local result = findEvent(child, eventName)
-            if result then
-                return result
-            end
-        end
-    end
-    return nil
-end
-
-local impulseEvent, ragdollEvent
-
-local function findTargets()
-    local packages = ReplicatedStorage:WaitForChild("Packages")
-    local netFolder = packages:WaitForChild("Net")
-    local ragdollFolder = packages:WaitForChild("Ragdoll")
-    
-    print("[Detetive] Procurando por 'ApplyImpulse'...")
-    impulseEvent = findEvent(netFolder, "ApplyImpulse")
-    
-    print("[Detetive] Procurando por 'Ragdoll'...")
-    ragdollEvent = findEvent(ragdollFolder, "Ragdoll")
-
-    if impulseEvent then print("[Detetive] 'ApplyImpulse' encontrado em: " .. impulseEvent:GetFullName()) end
-    if ragdollEvent then print("[Detetive] 'Ragdoll' encontrado em: " .. ragdollEvent:GetFullName()) end
-    
-    return impulseEvent and ragdollEvent
-end
-
-
-local originalParents = {}
+local originalEvents = {}
 local fakeEvents = {}
 
 local function disableInvincibility()
@@ -53,37 +27,38 @@ local function disableInvincibility()
         end
     end
     fakeEvents = {}
-
-    if originalParents.impulse and impulseEvent then impulseEvent.Parent = originalParents.impulse end
-    if originalParents.ragdoll and ragdollEvent then ragdollEvent.Parent = originalParents.ragdoll end
+    
+    for key, original in pairs(originalEvents) do
+        if original and not original.Parent and targets[key] then
+             original.Parent = targets[key].Path
+        end
+    end
     
     isInvincible = false
-    print("[Detetive v4.2] Desativado. Vulnerabilidade restaurada.")
+    print("[Solução Final] Desativado. Vulnerabilidade restaurada.")
 end
 
 local function enableInvincibility()
-    if isInvincible or not impulseEvent or not ragdollEvent then return end
+    if not isInvincible then return end
 
-    originalParents.impulse = impulseEvent.Parent
-    impulseEvent.Parent = nil
-    local fakeImpulse = Instance.new("RemoteEvent")
-    fakeImpulse.Name = "ApplyImpulse"
-    fakeImpulse.Parent = originalParents.impulse
-    fakeEvents.impulse = fakeImpulse
+    for key, targetInfo in pairs(targets) do
+        local realEvent = targetInfo.Path:FindFirstChild(targetInfo.Name)
+        if realEvent and not fakeEvents[key] then
+            originalEvents[key] = realEvent
+            realEvent.Parent = nil 
+            
+            local fakeEvent = Instance.new("RemoteEvent")
+            fakeEvent.Name = targetInfo.Name
+            fakeEvent.Parent = targetInfo.Path
+            fakeEvents[key] = fakeEvent
+        end
+    end
     
-    originalParents.ragdoll = ragdollEvent.Parent
-    ragdollEvent.Parent = nil
-    local fakeRagdoll = Instance.new("RemoteEvent")
-    fakeRagdoll.Name = "Ragdoll"
-    fakeRagdoll.Parent = originalParents.ragdoll
-    fakeEvents.ragdoll = fakeRagdoll
-
-    isInvincible = true
-    print("[Detetive v4.2] Ativado. Você está protegido.")
+    print("[Solução Final] Ativado. Proteção máxima.")
 end
 
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "DetectiveGUI"
+screenGui.Name = "FinalSolutionGUI"
 screenGui.Parent = playerGui
 screenGui.ResetOnSpawn = false
 
@@ -92,12 +67,14 @@ toggleButton.Name = "ToggleButton"
 toggleButton.Parent = screenGui
 toggleButton.Size = UDim2.new(0, 160, 0, 50)
 toggleButton.Position = UDim2.new(0, 10, 0, 10)
-toggleButton.Draggable = true
+toggleButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+toggleButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.BorderSizePixel = 2
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleButton.Font = Enum.Font.SourceSansBold
 toggleButton.TextSize = 18
-toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleButton.BorderSizePixel = 2
-toggleButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Text = "Invencível: ON"
+toggleButton.Draggable = true
 
 local function toggle()
     if isInvincible then
@@ -111,13 +88,19 @@ local function toggle()
     end
 end
 
-if findTargets() then
+local success, err = pcall(function()
+    local impulseTarget = targets.Impulse.Path:WaitForChild(targets.Impulse.Name, 10)
+    local ragdollTarget = targets.Ragdoll.Path:WaitForChild(targets.Ragdoll.Name, 10)
+    if not impulseTarget or not ragdollTarget then
+        error("Um ou mais alvos não foram encontrados a tempo.")
+    end
+end)
+
+if success then
     toggleButton.MouseButton1Click:Connect(toggle)
-    toggleButton.Text = "Invencível: ON"
-    toggleButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
     enableInvincibility()
 else
     toggleButton.Text = "ERRO: Alvos não encontrados"
     toggleButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-    print("[Detetive] ERRO: Não foi possível encontrar um ou ambos os RemoteEvents. O script não pode continuar.")
+    warn("[Solução Final] ERRO:", err)
 end
