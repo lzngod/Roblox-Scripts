@@ -1,93 +1,96 @@
---[[
-    Script Anti-Ragdoll 
-    Método: Interceptação de Conexão (Hooking)
-    Descrição: Este script intercepta tentativas de conexão ao RemoteEvent de ragdoll.
-               Quando ativado, ele impede que o script do jogo receba o sinal para
-               derrubar o jogador, oferecendo uma solução robusta e alternável.
-]]
-
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Tenta encontrar o RemoteEvent de ragdoll
-local success, ragdollEvent = pcall(function()
-    return ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Ragdoll"):WaitForChild("Ragdoll")
-end)
+local isInvincible = false
 
-local isAntiRagdollActive = false
+local targets = {
+    Impulse = {
+        Path = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Net"):WaitForChild("RE"):WaitForChild("CombatService"),
+        Name = "ApplyImpulse"
+    },
+    Ragdoll = {
+        Path = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Ragdoll"),
+        Name = "Ragdoll"
+    }
+}
 
--- Implementação da função de hook (necessária para a interceptação)
-local hookfunction = hookfunction or newcclosure
-local getconnections = getconnections or get_connections
+local originalEvents = {}
+local fakeEvents = {}
 
--- Criação da Interface Gráfica (Botão)
+local function disableInvincibility()
+    for key, fake in pairs(fakeEvents) do
+        if fake and fake.Parent then
+            fake:Destroy()
+        end
+    end
+    fakeEvents = {}
+    
+    for key, original in pairs(originalEvents) do
+        if original and not original.Parent then
+             original.Parent = targets[key].Path
+        end
+    end
+    
+    isInvincible = false
+    print("[Invincibility] Desativado. Vulnerabilidade restaurada.")
+end
+
+local function enableInvincibility()
+    if isInvincible then return end
+
+    for key, targetInfo in pairs(targets) do
+        local realEvent = targetInfo.Path:FindFirstChild(targetInfo.Name)
+        if realEvent then
+            originalEvents[key] = realEvent
+            realEvent.Parent = nil 
+            
+            local fakeEvent = Instance.new("RemoteEvent")
+            fakeEvent.Name = targetInfo.Name
+            fakeEvent.Parent = targetInfo.Path
+            fakeEvents[key] = fakeEvent
+        end
+    end
+    
+    isInvincible = true
+    print("[Invincibility] Ativado. Você está protegido.")
+end
+
+
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AntiRagdollGUI_v3"
+screenGui.Name = "InvincibilityGUI"
 screenGui.Parent = playerGui
 screenGui.ResetOnSpawn = false
 
 local toggleButton = Instance.new("TextButton")
 toggleButton.Name = "ToggleButton"
 toggleButton.Parent = screenGui
-toggleButton.Size = UDim2.new(0, 150, 0, 50)
+toggleButton.Size = UDim2.new(0, 160, 0, 50)
 toggleButton.Position = UDim2.new(0, 10, 0, 10)
-toggleButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+toggleButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
 toggleButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
 toggleButton.BorderSizePixel = 2
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleButton.Font = Enum.Font.SourceSansBold
-toggleButton.TextSize = 16
-toggleButton.Text = "Anti-Ragdoll: OFF"
-toggleButton.Draggable = true -- Permite arrastar o botão
+toggleButton.TextSize = 18
+toggleButton.Text = "Invencível: ON"
+toggleButton.Draggable = true
 toggleButton.Active = true
 
--- Função que atualiza a aparência do botão
-local function updateButtonState()
-    if isAntiRagdollActive then
-        toggleButton.Text = "Anti-Ragdoll: ON"
-        toggleButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-    else
-        toggleButton.Text = "Anti-Ragdoll: OFF"
+function toggle()
+    if isInvincible then
+        disableInvincibility()
+        toggleButton.Text = "Invencível: OFF"
         toggleButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    end
-end
-
--- Função principal que liga ou desliga o anti-ragdoll
-local function toggleAntiRagdoll()
-    isAntiRagdollActive = not isAntiRagdollActive
-    if isAntiRagdollActive then
-        print("[Anti-Ragdoll v3] Ativado. Conexões serão bloqueadas.")
     else
-        print("[Anti-Ragdoll v3] Desativado. Conexões são permitidas.")
+        enableInvincibility()
+        toggleButton.Text = "Invencível: ON"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
     end
-    updateButtonState()
 end
 
--- A MÁGICA ACONTECE AQUI
-if success and ragdollEvent then
-    -- Se o evento de ragdoll for encontrado, preparamos a interceptação
-    
-    local original_connect
-    original_connect = hookfunction(ragdollEvent.OnClientEvent.Connect, function(self, ...)
-        if isAntiRagdollActive and self == ragdollEvent.OnClientEvent then
-            -- Se o anti-ragdoll está ativo e algo tenta se conectar ao evento de ragdoll,
-            -- nós retornamos uma conexão falsa que não faz nada.
-            return { Disconnect = function() end }
-        end
-        -- Caso contrário, deixamos a conexão original acontecer.
-        return original_connect(self, ...)
-    end)
-    
-    -- Conecta a função de toggle ao clique do botão
-    toggleButton.MouseButton1Click:Connect(toggleAntiRagdoll)
-    updateButtonState()
-    
-else
-    -- Se o evento não for encontrado, desativa o botão e avisa
-    toggleButton.Text = "ERRO: Evento não encontrado"
-    toggleButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-    toggleButton.Active = false
-    warn("[Anti-Ragdoll v3] AVISO: Não foi possível encontrar o evento 'Ragdoll'.")
-end
+toggleButton.MouseButton1Click:Connect(toggle)
+
+pcall(enableInvincibility)
