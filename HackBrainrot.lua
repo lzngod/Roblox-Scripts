@@ -80,7 +80,7 @@ AddToggle({
     Default = false,
     Callback = function(v)
         if v then
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/lzngod/Roblox-Scripts/refs/heads/main/MainHack.lua"))()
+            loadstring(game:HttpGet("https://github.com/Akbar123s/Script-Roblox-/blob/main/BrainRot%20Sell%20Gamers"))()
         end
     end
 })
