@@ -9,9 +9,9 @@ screenGui.Name = "HacksGUI"
 screenGui.Parent = player:WaitForChild("PlayerGui")
 screenGui.ResetOnSpawn = false
 
--- Main Frame
+-- Main Frame (aumentado para caber Noclip)
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 220, 0, 160)
+mainFrame.Size = UDim2.new(0, 220, 0, 240)
 mainFrame.Position = UDim2.new(0, 10, 0, 10)
 mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 mainFrame.BorderSizePixel = 0
@@ -37,10 +37,10 @@ title.TextScaled = true
 title.Font = Enum.Font.GothamBold
 title.Parent = mainFrame
 
--- Fly Button
+-- Fly Button (melhorado: velocidade 100, ownership para lag zero)
 local flyBtn = Instance.new("TextButton")
 flyBtn.Size = UDim2.new(0.85, 0, 0, 35)
-flyBtn.Position = UDim2.new(0.075, 0, 0.28, 0)
+flyBtn.Position = UDim2.new(0.075, 0, 0.23, 0)
 flyBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 flyBtn.Text = "Fly: OFF"
 flyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -57,7 +57,7 @@ flyStroke.Parent = flyBtn
 -- God Button
 local godBtn = Instance.new("TextButton")
 godBtn.Size = flyBtn.Size
-godBtn.Position = UDim2.new(0.075, 0, 0.55, 0)
+godBtn.Position = UDim2.new(0.075, 0, 0.50, 0)
 godBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 godBtn.Text = "God: OFF"
 godBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -70,6 +70,23 @@ godCorner.Parent = godBtn
 
 local godStroke = frameStroke:Clone()
 godStroke.Parent = godBtn
+
+-- Noclip Button (novo: atravessa paredes perfeitamente)
+local noclipBtn = Instance.new("TextButton")
+noclipBtn.Size = flyBtn.Size
+noclipBtn.Position = UDim2.new(0.075, 0, 0.77, 0)
+noclipBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+noclipBtn.Text = "Noclip: OFF"
+noclipBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+noclipBtn.TextScaled = true
+noclipBtn.Font = Enum.Font.GothamSemibold
+noclipBtn.Parent = mainFrame
+
+local noclipCorner = frameCorner:Clone()
+noclipCorner.Parent = noclipBtn
+
+local noclipStroke = frameStroke:Clone()
+noclipStroke.Parent = noclipBtn
 
 -- Minimize Button
 local minBtn = Instance.new("TextButton")
@@ -88,6 +105,7 @@ minCorner.Parent = minBtn
 -- Variables
 local flying = false
 local godmode = false
+local noclipping = false
 local minimized = false
 local bodyVelocity = nil
 local keys = {W = false, A = false, S = false, D = false, Space = false, LShift = false}
@@ -139,7 +157,7 @@ UserInputService.InputEnded:Connect(function(input, gameProcessed)
     elseif input.KeyCode == Enum.KeyCode.LeftShift then keys.LShift = false end
 end)
 
--- Fly Loop
+-- Main Loop (melhorado: fly mais rápido/suave, noclip + god integrados, ownership anti-lag)
 RunService.Heartbeat:Connect(function()
     local char = player.Character
     if not char then return end
@@ -153,6 +171,7 @@ RunService.Heartbeat:Connect(function()
             bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
             bodyVelocity.Velocity = Vector3.new(0, 0, 0)
             bodyVelocity.Parent = root
+            root:SetNetworkOwner(player)  -- Melhoria: zero lag
         end
         hum.PlatformStand = true
 
@@ -166,9 +185,9 @@ RunService.Heartbeat:Connect(function()
         if keys.LShift then moveVector = moveVector - Vector3.new(0, 1, 0) end
 
         if moveVector.Magnitude > 0 then
-            bodyVelocity.Velocity = moveVector.Unit * 50
+            bodyVelocity.Velocity = moveVector.Unit * 100  -- Melhoria: velocidade dobrada (mais rápida!)
         else
-            bodyVelocity.Velocity = Vector3.new(0, 0.1, 0)
+            bodyVelocity.Velocity = Vector3.new(0, 0.1, 0)  -- Hover suave
         end
     else
         hum.PlatformStand = false
@@ -176,19 +195,21 @@ RunService.Heartbeat:Connect(function()
             bodyVelocity:Destroy()
             bodyVelocity = nil
         end
+        root:SetNetworkOwner(nil)  -- Reset ownership
     end
-end)
 
--- God Loop
-RunService.Heartbeat:Connect(function()
-    if godmode then
-        local char = player.Character
-        if char then
-            local hum = char:FindFirstChildOfClass("Humanoid")
-            if hum then
-                hum.Health = hum.MaxHealth
+    -- Noclip (atravessa TUDO: paredes, chão, etc.)
+    if noclipping then
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
             end
         end
+    end
+
+    -- God (integrado)
+    if godmode then
+        hum.Health = hum.MaxHealth
     end
 end)
 
@@ -208,21 +229,31 @@ local function toggleGod()
 end
 godBtn.MouseButton1Click:Connect(toggleGod)
 
--- Toggle Minimize
+-- Toggle Noclip
+local function toggleNoclip()
+    noclipping = not noclipping
+    noclipBtn.Text = noclipping and "Noclip: ON" or "Noclip: OFF"
+    noclipBtn.BackgroundColor3 = noclipping and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(255, 0, 0)
+end
+noclipBtn.MouseButton1Click:Connect(toggleNoclip)
+
+-- Toggle Minimize (atualizado para novo tamanho)
 local function toggleMinimize()
     minimized = not minimized
     if minimized then
         minBtn.Text = "+"
         flyBtn.Visible = false
         godBtn.Visible = false
+        noclipBtn.Visible = false
         TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 220, 0, 45)}):Play()
     else
         minBtn.Text = "–"
-        local tween = TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 220, 0, 160)})
+        local tween = TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 220, 0, 240)})
         tween:Play()
         tween.Completed:Connect(function()
             flyBtn.Visible = true
             godBtn.Visible = true
+            noclipBtn.Visible = true
         end)
     end
 end
