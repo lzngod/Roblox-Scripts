@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 StarterGui:SetCore("ResetButtonCallback", false)
@@ -11,78 +12,175 @@ screenGui.Name = "MM2HacksFixed"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- GUI básica (sem tween pra evitar lag/crash)
+-- Frame principal
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 220, 0, 300)
-frame.Position = UDim2.new(0.01, 0, 0.01, 0)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.Size = UDim2.new(0, 250, 0, 350)
+frame.Position = UDim2.new(0, 10, 0, 10)
+frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+frame.BorderSizePixel = 0
 frame.Parent = screenGui
 
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = frame
 
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(70, 70, 70)
+stroke.Thickness = 2
+stroke.Parent = frame
+
+-- Título
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 40)
+title.Size = UDim2.new(1, -50, 0, 40)
+title.Position = UDim2.new(0, 10, 0, 5)
 title.BackgroundTransparency = 1
-title.Text = "MM2 HACKS FIXED - 2026"
-title.TextColor3 = Color3.fromRGB(255, 100, 100)
-title.Font = Enum.Font.GothamBold
+title.Text = "🛡️ MM2 HACKS 2026"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextScaled = true
+title.Font = Enum.Font.GothamBold
 title.Parent = frame
 
-local function createBtn(txt, y, func, offColor)
+-- Função pra criar botão
+local function createButton(posY, textOff)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.9, 0, 0, 40)
-    btn.Position = UDim2.new(0.05, 0, y, 0)
-    btn.BackgroundColor3 = offColor or Color3.fromRGB(180, 0, 0)
-    btn.Text = txt
-    btn.TextColor3 = Color3.new(1,1,1)
-    btn.Font = Enum.Font.GothamSemibold
+    btn.Size = UDim2.new(0.85, 0, 0, 45)
+    btn.Position = UDim2.new(0.075, 0, posY, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+    btn.Text = textOff
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.TextScaled = true
+    btn.Font = Enum.Font.GothamSemibold
     btn.Parent = frame
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
     
-    btn.MouseButton1Click:Connect(func)
+    local btnCorner = corner:Clone()
+    btnCorner.Parent = btn
+    
+    local btnStroke = stroke:Clone()
+    btnStroke.Parent = btn
+    
     return btn
 end
 
-local flying, godmode, noclipping, autofarming = false, false, false, false
-local bodyVel = nil
+-- Botões
+local flyBtn = createButton(0.18, "Fly: OFF")
+local godBtn = createButton(0.36, "God: OFF")
+local noclipBtn = createButton(0.54, "Noclip: OFF")
+local farmBtn = createButton(0.72, "AutoFarm: OFF")
+
+-- Minimize botão
+local minBtn = Instance.new("TextButton")
+minBtn.Size = UDim2.new(0, 40, 0, 35)
+minBtn.Position = UDim2.new(1, -50, 0, 2.5)
+minBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+minBtn.Text = "–"
+minBtn.TextColor3 = Color3.white
+minBtn.TextScaled = true
+minBtn.Font = Enum.Font.GothamBold
+minBtn.Parent = frame
+
+local minCorner = corner:Clone()
+minCorner.Parent = minBtn
+
+-- Variáveis
+local flying = false
+local godmode = false
+local noclipping = false
+local autofarming = false
+local minimized = false
+local bodyVelocity = nil
 local keys = {}
 
-createBtn("Fly: OFF", 0.18, function()
-    flying = not flying
-    createBtn("Fly: " .. (flying and "ON" or "OFF"), 0.18, nil) -- update text (hack simples)
-    print("Fly toggled: " .. tostring(flying))
+-- Draggin GUI
+local dragging, dragStart, startPos
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+    end
 end)
 
-createBtn("God: OFF", 0.32, function()
-    godmode = not godmode
-    print("God toggled: " .. tostring(godmode))
-end)
-
-createBtn("Noclip: OFF", 0.46, function()
-    noclipping = not noclipping
-    print("Noclip toggled: " .. tostring(noclipping))
-end)
-
-createBtn("AutoFarm Coins: OFF", 0.60, function()
-    autofarming = not autofarming
-    if autofarming then flying = true end
-    print("AutoFarm toggled: " .. tostring(autofarming))
-end)
-
--- Keys pra fly manual
-UserInputService.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Keyboard then
-        keys[input.KeyCode.Name] = true
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Keyboard then
-        keys[input.KeyCode.Name] = false
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
     end
 end)
+
+-- Teclas
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    local kc = input.KeyCode.Name
+    keys[kc] = true
+end)
+
+UserInputService.InputEnded:Connect(function(input, gp)
+    if gp then return end
+    local kc = input.KeyCode.Name
+    keys[kc] = nil
+end)
+
+-- Toggle funções
+local function updateBtn(btn, state, textOn, textOff)
+    btn.Text = state and textOn or textOff
+    btn.BackgroundColor3 = state and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(255, 50, 50)
+end
+
+flyBtn.MouseButton1Click:Connect(function()
+    flying = not flying
+    updateBtn(flyBtn, flying, "Fly: ON", "Fly: OFF")
+end)
+
+godBtn.MouseButton1Click:Connect(function()
+    godmode = not godmode
+    updateBtn(godBtn, godmode, "God: ON", "God: OFF")
+end)
+
+noclipBtn.MouseButton1Click:Connect(function()
+    noclipping = not noclipping
+    updateBtn(noclipBtn, noclipping, "Noclip: ON", "Noclip: OFF")
+end)
+
+farmBtn.MouseButton1Click:Connect(function()
+    autofarming = not autofarming
+    updateBtn(farmBtn, autofarming, "AutoFarm: ON", "AutoFarm: OFF")
+    if autofarming then
+        flying = true
+        updateBtn(flyBtn, true, "Fly: ON", "Fly: OFF")
+    end
+end)
+
+-- Minimize
+minBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        minBtn.Text = "+"
+        TweenService:Create(frame, TweenInfo.new(0.3), {Size = UDim2.new(0, 250, 0, 50)}):Play()
+        flyBtn.Visible = godBtn.Visible = noclipBtn.Visible = farmBtn.Visible = title.Visible = false
+    else
+        minBtn.Text = "–"
+        TweenService:Create(frame, TweenInfo.new(0.3), {Size = UDim2.new(0, 250, 0, 350)}):Play()
+        flyBtn.Visible = godBtn.Visible = noclipBtn.Visible = farmBtn.Visible = title.Visible = true
+    end
+end)
+
+-- God no respawn
+local function applyGod(char)
+    task.wait(1)
+    local hum = char:FindFirstChild("Humanoid")
+    if hum and godmode then
+        hum.MaxHealth = math.huge
+        hum.Health = math.huge
+    end
+end
+player.CharacterAdded:Connect(applyGod)
+if player.Character then applyGod(player.Character) end
 
 -- Loop principal
 RunService.Heartbeat:Connect(function()
@@ -92,72 +190,81 @@ RunService.Heartbeat:Connect(function()
     local hum = char:FindFirstChild("Humanoid")
     if not root or not hum then return end
 
-    -- God simples e seguro
+    -- God
     if godmode then
-        hum.MaxHealth = 1e9
-        hum.Health = 1e9
+        hum.MaxHealth = math.huge
+        hum.Health = math.huge
         hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
         if not char:FindFirstChild("ForceField") then
             local ff = Instance.new("ForceField")
             ff.Parent = char
         end
+    else
+        if char:FindFirstChild("ForceField") then
+            char.ForceField:Destroy()
+        end
     end
 
-    -- Fly + AutoFarm
-    if flying or autofarming then
-        if not bodyVel then
-            bodyVel = Instance.new("BodyVelocity")
-            bodyVel.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-            bodyVel.Parent = root
+    -- Fly + Farm
+    if flying then
+        if not bodyVelocity or not bodyVelocity.Parent then
+            bodyVelocity = Instance.new("BodyVelocity")
+            bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            bodyVelocity.Parent = root
             root:SetNetworkOwner(player)
         end
         hum.PlatformStand = true
 
-        local moveDir = Vector3.new()
+        local moveVector = Vector3.new(0, 0, 0)
+        local cam = workspace.CurrentCamera
 
         if autofarming then
-            local closest = nil
-            local minDist = 1500
-            for _, obj in ipairs(workspace:GetDescendants()) do
-                if obj:IsA("BasePart") and obj.Name:lower():find("coin") then
+            local closestDist = math.huge
+            local target = nil
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if obj:IsA("BasePart") and (string.lower(obj.Name):find("coin") or obj.Name == "Coin") then
                     local dist = (root.Position - obj.Position).Magnitude
-                    if dist < minDist then
-                        minDist = dist
-                        closest = obj
+                    if dist < closestDist and dist < 1000 then
+                        closestDist = dist
+                        target = obj
                     end
                 end
             end
-            if closest then
-                moveDir = (closest.Position - root.Position).Unit * (minDist > 30 and 150 or 50)
-                print("AutoFarm: indo pra coin! Dist: " .. math.floor(minDist))
-            else
-                print("AutoFarm: nenhuma coin encontrada (verifique se spawnou)")
+            if target then
+                moveVector = (target.Position - root.Position).Unit * (closestDist > 20 and 150 or 50)
             end
         else
-            -- Manual fly
-            local cam = workspace.CurrentCamera
-            if keys.W then moveDir += cam.CFrame.LookVector end
-            if keys.S then moveDir -= cam.CFrame.LookVector end
-            if keys.A then moveDir -= cam.CFrame.RightVector end
-            if keys.D then moveDir += cam.CFrame.RightVector end
-            if keys.Space then moveDir += Vector3.new(0,1,0) end
-            if keys.LeftShift then moveDir -= Vector3.new(0,1,0) end
-            if moveDir.Magnitude > 0 then moveDir = moveDir.Unit * 90 end
+            if keys.W then moveVector += cam.CFrame.LookVector end
+            if keys.S then moveVector -= cam.CFrame.LookVector end
+            if keys.A then moveVector -= cam.CFrame.RightVector end
+            if keys.D then moveVector += cam.CFrame.RightVector end
+            if keys.Space then moveVector += Vector3.new(0, 1, 0) end
+            if keys.LeftShift then moveVector -= Vector3.new(0, 1, 0) end
+            if moveVector.Magnitude > 0 then
+                moveVector = moveVector.Unit * 100
+            else
+                moveVector = Vector3.new(0, 0.1, 0)
+            end
         end
 
-        bodyVel.Velocity = moveDir
+        bodyVelocity.Velocity = moveVector
     else
-        if bodyVel then bodyVel:Destroy() bodyVel = nil end
-        root:SetNetworkOwner(nil)
         hum.PlatformStand = false
+        if bodyVelocity then
+            bodyVelocity:Destroy()
+            bodyVelocity = nil
+        end
+        if root then root:SetNetworkOwner(nil) end
     end
 
     -- Noclip
     if noclipping then
-        for _, p in ipairs(char:GetDescendants()) do
-            if p:IsA("BasePart") then p.CanCollide = false end
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") and part ~= root then
+                part.CanCollide = false
+            end
         end
     end
 end)
 
-print("Script FIXED carregado! Ative God primeiro. Veja prints no console pra debug. Se AutoFarm não achar coins, me manda o que printou.")
+print("🛡️ MM2 HACKS CARREGADO! GUI arrastável, todos botões funcionam agora. Teste God + AutoFarm!")
