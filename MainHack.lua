@@ -3,16 +3,17 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local StarterGui = game:GetService("StarterGui")
+local Debris = game:GetService("Debris")
 
 local player = Players.LocalPlayer
-StarterGui:SetCore("ResetButtonCallback", false)  -- Anti-reset pra God funcionar
+StarterGui:SetCore("ResetButtonCallback", false)
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "HacksGUI"
 screenGui.Parent = player:WaitForChild("PlayerGui")
 screenGui.ResetOnSpawn = false
 
--- Main Frame (aumentado pra AutoFarm)
+-- Main Frame
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 220, 0, 320)
 mainFrame.Position = UDim2.new(0, 10, 0, 10)
@@ -34,7 +35,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -40, 0, 35)
 title.Position = UDim2.new(0, 10, 0, 5)
 title.BackgroundTransparency = 1
-title.Text = "🛡️ HACKS MM2"
+title.Text = "🛡️ HACKS MM2 ✅"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextScaled = true
 title.Font = Enum.Font.GothamBold
@@ -56,7 +57,7 @@ flyCorner.Parent = flyBtn
 local flyStroke = frameStroke:Clone()
 flyStroke.Parent = flyBtn
 
--- God Button (melhorado pra MM2)
+-- God Button
 local godBtn = Instance.new("TextButton")
 godBtn.Size = flyBtn.Size
 godBtn.Position = UDim2.new(0.075, 0, 0.42, 0)
@@ -88,7 +89,7 @@ noclipCorner.Parent = noclipBtn
 local noclipStroke = frameStroke:Clone()
 noclipStroke.Parent = noclipBtn
 
--- AutoFarm Coins Button (novo: voa e coleta auto!)
+-- AutoFarm Button
 local autofarmBtn = Instance.new("TextButton")
 autofarmBtn.Size = flyBtn.Size
 autofarmBtn.Position = UDim2.new(0.075, 0, 0.90, 0)
@@ -104,7 +105,7 @@ autofarmCorner.Parent = autofarmBtn
 local autofarmStroke = frameStroke:Clone()
 autofarmStroke.Parent = autofarmBtn
 
--- Minimize Button
+-- Minimize
 local minBtn = Instance.new("TextButton")
 minBtn.Size = UDim2.new(0, 35, 0, 30)
 minBtn.Position = UDim2.new(1, -42, 0, 2)
@@ -118,7 +119,7 @@ minBtn.Parent = mainFrame
 local minCorner = frameCorner:Clone()
 minCorner.Parent = minBtn
 
--- Variables
+-- Vars
 local flying = false
 local godmode = false
 local noclipping = false
@@ -128,7 +129,51 @@ local bodyVelocity = nil
 local forcefield = nil
 local keys = {W = false, A = false, S = false, D = false, Space = false, LShift = false}
 
--- Dragging (igual)
+-- Godmode function (MM2 fix: humanoid clone bypass)
+local function godmodefunc(char)
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.MaxHealth = math.huge
+        hum.Health = math.huge
+        hum.Name = "1"
+        local cl = hum:Clone()
+        cl.Name = "Humanoid"
+        cl.MaxHealth = math.huge
+        cl.Health = math.huge
+        cl.Parent = char
+        hum:Destroy()
+        workspace.CurrentCamera.CameraSubject = cl
+        local anim = char:FindFirstChild("Animate")
+        if anim then
+            anim.Disabled = true
+            spawn(function()
+                wait(0.1)
+                anim.Disabled = false
+            end)
+        end
+    end
+end
+
+-- Character respawn handler for god
+local function onCharacterAdded(char)
+    char:WaitForChild("HumanoidRootPart", 5)
+    char.ChildAdded:Connect(function(child)
+        if child.Name == "Humanoid" and godmode then
+            wait(0.5)  -- Wait stable
+            godmodefunc(char)
+        end
+    end)
+    if godmode then
+        wait(1)
+        godmodefunc(char)
+    end
+end
+player.CharacterAdded:Connect(onCharacterAdded)
+if player.Character then
+    onCharacterAdded(player.Character)
+end
+
+-- Dragging (same)
 local dragging = false
 local dragStart = nil
 local startPos = nil
@@ -154,28 +199,30 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- Key Input (só pra fly manual)
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if input.KeyCode == Enum.KeyCode.W then keys.W = true
-    elseif input.KeyCode == Enum.KeyCode.A then keys.A = true
-    elseif input.KeyCode == Enum.KeyCode.S then keys.S = true
-    elseif input.KeyCode == Enum.KeyCode.D then keys.D = true
-    elseif input.KeyCode == Enum.KeyCode.Space then keys.Space = true
-    elseif input.KeyCode == Enum.KeyCode.LeftShift then keys.LShift = true end
+-- Key input (manual fly only)
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    local kc = input.KeyCode
+    if kc == Enum.KeyCode.W then keys.W = true
+    elseif kc == Enum.KeyCode.A then keys.A = true
+    elseif kc == Enum.KeyCode.S then keys.S = true
+    elseif kc == Enum.KeyCode.D then keys.D = true
+    elseif kc == Enum.KeyCode.Space then keys.Space = true
+    elseif kc == Enum.KeyCode.LeftShift then keys.LShift = true end
 end)
 
-UserInputService.InputEnded:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if input.KeyCode == Enum.KeyCode.W then keys.W = false
-    elseif input.KeyCode == Enum.KeyCode.A then keys.A = false
-    elseif input.KeyCode == Enum.KeyCode.S then keys.S = false
-    elseif input.KeyCode == Enum.KeyCode.D then keys.D = false
-    elseif input.KeyCode == Enum.KeyCode.Space then keys.Space = false
-    elseif input.KeyCode == Enum.KeyCode.LeftShift then keys.LShift = false end
+UserInputService.InputEnded:Connect(function(input, gp)
+    if gp then return end
+    local kc = input.KeyCode
+    if kc == Enum.KeyCode.W then keys.W = false
+    elseif kc == Enum.KeyCode.A then keys.A = false
+    elseif kc == Enum.KeyCode.S then keys.S = false
+    elseif kc == Enum.KeyCode.D then keys.D = false
+    elseif kc == Enum.KeyCode.Space then keys.Space = false
+    elseif kc == Enum.KeyCode.LeftShift then keys.LShift = false end
 end)
 
--- Main Loop SUPER MELHORADO (God pra MM2 + AutoFarm Coins)
+-- Main Loop
 RunService.Heartbeat:Connect(function()
     local char = player.Character
     if not char then return end
@@ -183,7 +230,7 @@ RunService.Heartbeat:Connect(function()
     local hum = char:FindFirstChildOfClass("Humanoid")
     if not root or not hum then return end
 
-    -- GOD MODE MELHORADO PRA MM2 (huge health + ForceField + anti-reset já setado)
+    -- God reinforce (MM2 bulletproof)
     if godmode then
         hum.MaxHealth = math.huge
         hum.Health = math.huge
@@ -191,74 +238,74 @@ RunService.Heartbeat:Connect(function()
             forcefield = Instance.new("ForceField")
             forcefield.Parent = char
         end
+        -- Anti-die
+        hum.Died:Connect(function() hum.Health = math.huge end)
     else
-        if char:FindFirstChild("ForceField") then
-            char.ForceField:Destroy()
-            forcefield = nil
-        end
+        if forcefield then forcefield:Destroy(); forcefield = nil end
     end
 
-    -- FLY + AUTO FARM COINS (voa direto pras moedas no MM2!)
+    -- Fly + AutoFarm
     if flying then
         if not bodyVelocity or not bodyVelocity.Parent then
             bodyVelocity = Instance.new("BodyVelocity")
-            bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+            bodyVelocity.MaxForce = Vector3.new(1e9, 1e9, 1e9)
             bodyVelocity.Parent = root
             root:SetNetworkOwner(player)
         end
         hum.PlatformStand = true
 
-        local camera = workspace.CurrentCamera
-        local moveVector = Vector3.new(0, 0, 0)
+        local vel = Vector3.new(0, 0, 0)
+        local cam = workspace.CurrentCamera
 
-        -- AUTO FARM: acha moeda mais próxima e voa pra ela!
         if autofarming then
-            local charPos = root.Position
-            local shortestDistance = math.huge
+            -- FIXADO: Coins são BasePart "Coin" direto no workspace!
+            local pos = root.Position
+            local distMin = math.huge
             local targetPos = nil
             for _, obj in ipairs(workspace:GetChildren()) do
-                if obj.Name == "Coin" and obj:FindFirstChild("Coin") then  -- Estrutura das moedas MM2
-                    local coinPart = obj.Coin
-                    local dist = (charPos - coinPart.Position).Magnitude
-                    if dist < shortestDistance and dist < 500 then  -- Só moedas próximas pra otimizado
-                        shortestDistance = dist
-                        targetPos = coinPart.Position
+                if obj:IsA("BasePart") and obj.Name == "Coin" then
+                    local dist = (pos - obj.Position).Magnitude
+                    if dist < distMin and dist < 1000 and dist > 8 then
+                        distMin = dist
+                        targetPos = obj.Position
                     end
                 end
             end
             if targetPos then
-                local direction = (targetPos - charPos)
-                moveVector = direction.Unit * (direction.Magnitude > 10 and 200 or 50)  -- Acelera + freia perto
-            else
-                moveVector = Vector3.new(0, 0.1, 0)  -- Hover se sem moedas
+                local dir = (targetPos - pos).Unit
+                local speed = distMin > 30 and 200 or 70
+                vel = dir * speed
             end
+            -- else vel=0 (hover)
         else
-            -- Fly manual normal
-            if keys.W then moveVector = moveVector + camera.CFrame.LookVector end
-            if keys.S then moveVector = moveVector - camera.CFrame.LookVector end
-            if keys.A then moveVector = moveVector - camera.CFrame.RightVector end
-            if keys.D then moveVector = moveVector + camera.CFrame.RightVector end
-            if keys.Space then moveVector = moveVector + Vector3.new(0, 1, 0) end
-            if keys.LShift then moveVector = moveVector - Vector3.new(0, 1, 0) end
+            -- Manual fly
+            local moveDir = Vector3.new(0,0,0)
+            if keys.W then moveDir = moveDir + cam.CFrame.LookVector end
+            if keys.S then moveDir = moveDir - cam.CFrame.LookVector end
+            if keys.A then moveDir = moveDir - cam.CFrame.RightVector end
+            if keys.D then moveDir = moveDir + cam.CFrame.RightVector end
+            if keys.Space then moveDir = moveDir + Vector3.yAxis end
+            if keys.LShift then moveDir = moveDir - Vector3.yAxis end
+            if moveDir.Magnitude > 0 then
+                vel = moveDir.Unit * 100
+            end
         end
 
-        if moveVector.Magnitude > 0 then
-            bodyVelocity.Velocity = moveVector.Unit * 100
-        else
-            bodyVelocity.Velocity = Vector3.new(0, 0.1, 0)
-        end
+        bodyVelocity.Velocity = vel
     else
         hum.PlatformStand = false
-        if bodyVelocity then bodyVelocity:Destroy(); bodyVelocity = nil end
+        if bodyVelocity then
+            bodyVelocity:Destroy()
+            bodyVelocity = nil
+        end
         root:SetNetworkOwner(nil)
     end
 
     -- Noclip
     if noclipping then
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
+        for _, v in pairs(char:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = false
             end
         end
     end
@@ -276,6 +323,9 @@ local function toggleGod()
     godmode = not godmode
     godBtn.Text = godmode and "God: ON" or "God: OFF"
     godBtn.BackgroundColor3 = godmode and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(255, 0, 0)
+    if player.Character and godmode then
+        godmodefunc(player.Character)
+    end
 end
 godBtn.MouseButton1Click:Connect(toggleGod)
 
@@ -288,34 +338,26 @@ noclipBtn.MouseButton1Click:Connect(toggleNoclip)
 
 local function toggleAutofarm()
     autofarming = not autofarming
-    flying = autofarming  -- Liga fly auto pra farm
-    flyBtn.Text = flying and "Fly: ON" or "Fly: OFF"  -- Sync
-    flyBtn.BackgroundColor3 = flying and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(255, 0, 0)
+    flying = autofarming  -- Auto fly
+    toggleFly()  -- Update UI
     autofarmBtn.Text = autofarming and "AutoFarm: ON" or "AutoFarm: OFF"
     autofarmBtn.BackgroundColor3 = autofarming and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(255, 0, 0)
 end
 autofarmBtn.MouseButton1Click:Connect(toggleAutofarm)
 
--- Minimize (atualizado)
+-- Minimize
 local function toggleMinimize()
     minimized = not minimized
     if minimized then
         minBtn.Text = "+"
-        flyBtn.Visible = false
-        godBtn.Visible = false
-        noclipBtn.Visible = false
-        autofarmBtn.Visible = false
+        flyBtn.Visible = godBtn.Visible = noclipBtn.Visible = autofarmBtn.Visible = false
         TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 220, 0, 45)}):Play()
     else
         minBtn.Text = "–"
         local tween = TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 220, 0, 320)})
         tween:Play()
-        tween.Completed:Connect(function()
-            flyBtn.Visible = true
-            godBtn.Visible = true
-            noclipBtn.Visible = true
-            autofarmBtn.Visible = true
-        end)
+        tween.Completed:Wait()
+        flyBtn.Visible = godBtn.Visible = noclipBtn.Visible = autofarmBtn.Visible = true
     end
 end
 minBtn.MouseButton1Click:Connect(toggleMinimize)
